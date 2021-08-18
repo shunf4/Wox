@@ -79,6 +79,8 @@ Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Wox.Installer", "Wox.Instal
 		{DB90F671-D861-46BB-93A3-F1304F5BA1C5} = {DB90F671-D861-46BB-93A3-F1304F5BA1C5}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wox.Plugin.FindFile", "Plugins\Wox.Plugin.FindFile\Wox.Plugin.FindFile.csproj", "{84EA88B4-71F2-4A3D-9771-D7B0244C0D81}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -164,6 +166,10 @@ Global
 		{9B130CC5-14FB-41FF-B310-0A95B6894C37}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F96EDD7F-00C8-44B8-8AC7-1D500BBBAEEA}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{F96EDD7F-00C8-44B8-8AC7-1D500BBBAEEA}.Release|Any CPU.ActiveCfg = Release|x64
+		{84EA88B4-71F2-4A3D-9771-D7B0244C0D81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84EA88B4-71F2-4A3D-9771-D7B0244C0D81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84EA88B4-71F2-4A3D-9771-D7B0244C0D81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84EA88B4-71F2-4A3D-9771-D7B0244C0D81}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -183,6 +189,7 @@ Global
 		{C21BFF9C-2C99-4B5F-B7C9-A5E6DDDB37B0} = {3A73F5A7-0335-40D8-BF7C-F20BE5D0BA87}
 		{59BD9891-3837-438A-958D-ADC7F91F6F7E} = {3A73F5A7-0335-40D8-BF7C-F20BE5D0BA87}
 		{9B130CC5-14FB-41FF-B310-0A95B6894C37} = {3A73F5A7-0335-40D8-BF7C-F20BE5D0BA87}
+		{84EA88B4-71F2-4A3D-9771-D7B0244C0D81} = {3A73F5A7-0335-40D8-BF7C-F20BE5D0BA87}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F26ACB50-3F6C-4907-B0C9-1ADACC1D0DED}

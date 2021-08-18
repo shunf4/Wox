@@ -1,18 +1,15 @@
+using NHotkey;
+using NHotkey.Wpf;
+using NLog;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using System.Collections.Concurrent;
-
-using NHotkey;
-using NHotkey.Wpf;
-using NLog;
-
 using Wox.Core.Plugin;
 using Wox.Core.Resource;
 using Wox.Helper;
@@ -465,7 +462,10 @@ namespace Wox.ViewModel
                             // start the progress bar if query takes more than 200 ms
                             if (!token.IsCancellationRequested)
                             {
-                                ProgressBarVisibility = Visibility.Visible;
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    ProgressBarVisibility = Visibility.Visible;
+                                });
                             }
                         }, token);
 

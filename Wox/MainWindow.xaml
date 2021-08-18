@@ -61,10 +61,9 @@
     </Window.InputBindings>
     <Border Style="{DynamicResource WindowBorderStyle}" MouseDown="OnMouseDown" >
         <StackPanel Orientation="Vertical">
-            <Grid>
+            
                 <TextBox x:Name="QueryTextSuggestionBox"
-                         Style="{DynamicResource QueryTextSuggestionBoxStyle}"
-                         IsEnabled="False">
+                         Style="{DynamicResource QueryTextSuggestionBoxStyle}">
                     <TextBox.Text>
                         <MultiBinding Converter="{StaticResource QuerySuggestionBoxConverter}">
                             <Binding ElementName="QueryTextBox" Path="Text"/>
@@ -89,7 +88,7 @@
                         </ContextMenu>
                     </TextBox.ContextMenu>
                 </TextBox>
-            </Grid>
+
             <Line x:Name="ProgressBar" HorizontalAlignment="Right"
                   Style="{DynamicResource PendingLineStyle}" Visibility="{Binding ProgressBarVisibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                   Y1="0" Y2="0" X2="100" Height="2" Width="752" StrokeThickness="1">
