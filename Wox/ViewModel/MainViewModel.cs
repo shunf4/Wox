@@ -92,6 +92,7 @@ namespace Wox.ViewModel
                 while (true)
                 {
                     ResultsForUpdate first = _resultsQueue.Take();
+                    Logger.WoxDebug($"First: {first.Results.ToArray()}");
                     List<ResultsForUpdate> updates = new List<ResultsForUpdate>() { first };
 
                     DateTime startTime = DateTime.Now;
@@ -102,9 +103,10 @@ namespace Wox.ViewModel
                     while (_resultsQueue.TryTake(out tempUpdate) && DateTime.Now < takeExpired)
                     {
                         updates.Add(tempUpdate);
+                        Logger.WoxDebug($"Next: {tempUpdate.Results.ToArray()}");
                     }
 
-
+                    Logger.WoxDebug($"Update");
                     UpdateResultView(updates);
 
                     DateTime currentTime = DateTime.Now;
@@ -429,32 +431,38 @@ namespace Wox.ViewModel
 
         private void QueryResults()
         {
-            if (_updateSource != null && !_updateSource.IsCancellationRequested)
+            CancellationTokenSource source;
+            CancellationToken token;
+            lock (this)
             {
-                // first condition used for init run
-                // second condition used when task has already been canceled in last turn
-                _updateSource.Cancel();
-                Logger.WoxDebug($"cancel init {_updateSource.Token.GetHashCode()} {Thread.CurrentThread.ManagedThreadId} {QueryText}");
-                _updateSource.Dispose();
+                if (_updateSource != null && !_updateSource.IsCancellationRequested)
+                {
+                    // first condition used for init run
+                    // second condition used when task has already been canceled in last turn
+                    _updateSource.Cancel();
+                    Logger.WoxDebug($"cancel init {_updateSource.Token.GetHashCode()} {Thread.CurrentThread.ManagedThreadId} {QueryText}");
+                    _updateSource.Dispose();
+                }
+                source = new CancellationTokenSource();
+                _updateSource = source;
+                token = source.Token;
             }
-            var source = new CancellationTokenSource();
-            _updateSource = source;
-            var token = source.Token;
 
             ProgressBarVisibility = Visibility.Hidden;
 
             var queryText = QueryText.Trim();
             Task.Run(() =>
             {
+                Logger.WoxDebug($"Task Run {queryText}");
                 if (!string.IsNullOrEmpty(queryText))
                 {
-                    if (token.IsCancellationRequested) { return; }
+                    if (token.IsCancellationRequested) { Logger.WoxDebug($"Return {queryText} 1"); return; }
                     var query = QueryBuilder.Build(queryText, PluginManager.NonGlobalPlugins);
                     _lastQuery = query;
                     if (query != null)
                     {
                         // handle the exclusiveness of plugin using action keyword
-                        if (token.IsCancellationRequested) { return; }
+                        if (token.IsCancellationRequested) { Logger.WoxDebug($"Return {queryText} 2"); return; }
 
                         Task.Delay(200, token).ContinueWith(_ =>
                         {
@@ -470,7 +478,7 @@ namespace Wox.ViewModel
                         }, token);
 
 
-                        if (token.IsCancellationRequested) { return; }
+                        if (token.IsCancellationRequested) { Logger.WoxDebug($"Return {queryText} 3"); return; }
                         var plugins = PluginManager.AllPlugins;
 
                         var option = new ParallelOptions()
@@ -751,7 +759,7 @@ namespace Wox.ViewModel
         {
             foreach (ResultsForUpdate update in updates)
             {
-                Logger.WoxTrace($"{update.Metadata.Name}:{update.Query.RawQuery}");
+                Logger.WoxDebug($"{update.Metadata.Name}:{update.Query.RawQuery}");
                 foreach (var result in update.Results)
                 {
                     if (update.Token.IsCancellationRequested) { return; }
@@ -770,6 +778,7 @@ namespace Wox.ViewModel
                 }
             }
 
+            Logger.WoxDebug($"Add Results: {updates}");
             Results.AddResults(updates);
 
             if (Results.Visbility != Visibility.Visible && Results.Count > 0)

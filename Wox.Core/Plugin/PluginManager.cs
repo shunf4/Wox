@@ -190,6 +190,7 @@ namespace Wox.Core.Plugin
             }
             catch (Exception e)
             {
+                e.Data.Add("stacktrace", e.StackTrace);
                 e.Data.Add(nameof(pair.Metadata.ID), pair.Metadata.ID);
                 e.Data.Add(nameof(pair.Metadata.Name), pair.Metadata.Name);
                 e.Data.Add(nameof(pair.Metadata.PluginDirectory), pair.Metadata.PluginDirectory);

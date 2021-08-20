@@ -144,7 +144,7 @@ namespace Wox.ViewModel
             lock (_collectionLock)
             {
                 List<ResultViewModel> newResults = NewResults(updates, token);
-                Logger.WoxTrace($"newResults {newResults.Count}");
+                Logger.WoxDebug($"newResults {newResults.Count}");
                 Results.Update(newResults, token);
             }
 

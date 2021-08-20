@@ -54,7 +54,7 @@ namespace Wox.Infrastructure.Logger
 
         public static void WoxDebug(this NLog.Logger logger, string message, [CallerMemberName] string methodName = "")
         {
-            Debug.WriteLine($"DEBUG|{logger.Name}|{methodName}|{message}");
+            Debug.WriteLine($"[Wox] DEBUG|{logger.Name}|{methodName}|{message}");
             logger.Debug($"{methodName}|{message}");
         }
 
