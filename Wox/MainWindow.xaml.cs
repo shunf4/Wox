@@ -20,7 +20,7 @@ using DragEventArgs = System.Windows.DragEventArgs;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MessageBox = System.Windows.MessageBox;
 using NotifyIcon = System.Windows.Forms.NotifyIcon;
-
+using System.Windows.Data;
 
 namespace Wox
 {
@@ -105,6 +105,7 @@ namespace Wox
                     _notifyIcon.Visible = !_settings.HideNotifyIcon;
                 }
             };
+
             InitializePosition();
         }
 

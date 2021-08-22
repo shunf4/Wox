@@ -100,13 +100,24 @@ namespace Wox.ViewModel
                     DateTime takeExpired = startTime.AddMilliseconds(timeout / 10);
 
                     ResultsForUpdate tempUpdate;
-                    while (_resultsQueue.TryTake(out tempUpdate) && DateTime.Now < takeExpired)
+                    while (true)
                     {
-                        updates.Add(tempUpdate);
-                        Logger.WoxDebug($"Next: {tempUpdate.Results.ToArray()}");
+                        bool tryTakeSuccess = _resultsQueue.TryTake(out tempUpdate);
+                        if (tryTakeSuccess)
+                        {
+                            updates.Add(tempUpdate);
+                            Logger.WoxDebug($"Next: {tempUpdate.Results} {tempUpdate.Token.GetHashCode()}");
+                        }
+                        else
+                        {
+                            if (DateTime.Now >= takeExpired)
+                            {
+                                break;
+                            }
+                        }
                     }
 
-                    Logger.WoxDebug($"Update");
+                    Logger.WoxDebug($"Update {updates.Count}");
                     UpdateResultView(updates);
 
                     DateTime currentTime = DateTime.Now;
@@ -327,6 +338,8 @@ namespace Wox.ViewModel
 
         public Visibility MainWindowVisibility { get; set; }
 
+        public bool Topmost { get; set; }
+
         public ICommand EscCommand { get; set; }
         public ICommand SelectNextItemCommand { get; set; }
         public ICommand SelectPrevItemCommand { get; set; }
@@ -448,6 +461,8 @@ namespace Wox.ViewModel
                 token = source.Token;
             }
 
+            Results.UserChangedIndex = false;
+
             ProgressBarVisibility = Visibility.Hidden;
 
             var queryText = QueryText.Trim();
@@ -464,11 +479,14 @@ namespace Wox.ViewModel
                         // handle the exclusiveness of plugin using action keyword
                         if (token.IsCancellationRequested) { Logger.WoxDebug($"Return {queryText} 2"); return; }
 
-                        Task.Delay(200, token).ContinueWith(_ =>
+                        CancellationTokenSource progressBarSource = new CancellationTokenSource();
+                        CancellationTokenSource progressBarLinkedSource = CancellationTokenSource.CreateLinkedTokenSource(token, progressBarSource.Token);
+
+                        Task.Delay(200, progressBarLinkedSource.Token).ContinueWith(_ =>
                         {
-                            Logger.WoxTrace($"progressbar visible 1 {token.GetHashCode()} {token.IsCancellationRequested}  {Thread.CurrentThread.ManagedThreadId}  {query} {ProgressBarVisibility}");
+                            Logger.WoxDebug($"progressbar visible 1 {token.GetHashCode()} {progressBarSource.GetHashCode()} {token.IsCancellationRequested} {progressBarSource.Token.IsCancellationRequested} {Thread.CurrentThread.ManagedThreadId}  {query} {ProgressBarVisibility}");
                             // start the progress bar if query takes more than 200 ms
-                            if (!token.IsCancellationRequested)
+                            if (!progressBarLinkedSource.Token.IsCancellationRequested)
                             {
                                 Application.Current.Dispatcher.Invoke(() =>
                                 {
@@ -511,29 +529,23 @@ namespace Wox.ViewModel
 
                         Task.Run(() =>
                         {
-                            Logger.WoxTrace($"progressbar visible 2 {token.GetHashCode()} {token.IsCancellationRequested}  {Thread.CurrentThread.ManagedThreadId}  {query} {ProgressBarVisibility}");
+                            Logger.WoxDebug($"progressbar visible 2 {token.GetHashCode()} {progressBarSource.GetHashCode()} {token.IsCancellationRequested} {progressBarSource.Token.IsCancellationRequested} {Thread.CurrentThread.ManagedThreadId}  {query} {ProgressBarVisibility}");
                             // wait all plugins has been processed
                             try
                             {
                                 countdown.Wait(token);
                             }
                             catch (OperationCanceledException)
-                            {
-                                // todo: why we need hidden here and why progress bar is not working
-                                ProgressBarVisibility = Visibility.Hidden;
-                                return;
-                            }
-                            if (!token.IsCancellationRequested)
+                            { }
+                            finally
                             {
                                 // used to cancel previous progress bar visible task
-                                source.Cancel();
-                                source.Dispose();
+                                progressBarSource.Cancel();
+                                progressBarSource.Dispose();
                                 // update to hidden if this is still the current query
                                 ProgressBarVisibility = Visibility.Hidden;
                             }
                         });
-
-
                     }
                 }
                 else
@@ -759,10 +771,17 @@ namespace Wox.ViewModel
         {
             foreach (ResultsForUpdate update in updates)
             {
-                Logger.WoxDebug($"{update.Metadata.Name}:{update.Query.RawQuery}");
+                Logger.WoxDebug($"{update.Metadata.Name}: {update.Query.RawQuery}");
                 foreach (var result in update.Results)
                 {
-                    if (update.Token.IsCancellationRequested) { return; }
+                    Logger.WoxDebug($" - {result.Title} {result.Score}");
+                    if (update.Token.IsCancellationRequested)
+                    {
+                        // Maybe next updates' token are new, so don't give up here
+                        // return;
+                        Logger.WoxDebug($"(Token expired, Skipping current plugin)");
+                        break;
+                    }
                     if (_topMostRecord.IsTopMost(result))
                     {
                         result.Score = int.MaxValue;
@@ -776,9 +795,21 @@ namespace Wox.ViewModel
                         result.Score = result.Score;
                     }
                 }
+                if (update.Token.IsCancellationRequested)
+                {
+                    continue;
+                }
             }
 
-            Logger.WoxDebug($"Add Results: {updates}");
+            foreach (var update in updates)
+            {
+                if (update.Token.IsCancellationRequested)
+                {
+                    continue;
+                }
+                Logger.WoxDebug($"Add Result: {update} {update.Token.GetHashCode()}");
+            }
+            
             Results.AddResults(updates);
 
             if (Results.Visbility != Visibility.Visible && Results.Count > 0)

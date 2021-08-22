@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -25,11 +26,24 @@ namespace Wox.ViewModel
         private readonly Settings _settings;
         private int MaxResults => _settings?.MaxResultsToShow ?? 6;
         private readonly object _collectionLock = new object();
+        public volatile bool CollectionJustChanged = false;
+        public volatile bool UserChangedIndex = false;
+
         public ResultsViewModel()
         {
             Results = new ResultCollection();
             BindingOperations.EnableCollectionSynchronization(Results, _collectionLock);
+            Results.CollectionChangedPrioritized += (_, __) =>
+            {
+                // Mark collection as changed, so that the selected item should be updated to the first item in ResultListBox.
+                // When ResultListBox finished its update (I can find no suitable event; currently let us use SelectedIndex's TargetUpdated), CollectionJustChanged is checked. If it is true, set it to false, then update SelectedIndex to 0.
+                CollectionJustChanged = true;
+
+                // Try Changing SelectedIndex, so that "SelectedIndex's TargetUpdated" aka SelectedIndex.set will always be invoked.
+                SelectedIndex = -1;
+            };
         }
+
         public ResultsViewModel(Settings settings) : this()
         {
             _settings = settings;
@@ -50,7 +64,32 @@ namespace Wox.ViewModel
 
         public int MaxHeight => MaxResults * 50;
 
-        public int SelectedIndex { get; set; }
+        private int _selectedIndex;
+        public int SelectedIndex {
+            get { return _selectedIndex; }
+            set
+            {
+                _selectedIndex = value;
+
+                Logger.WoxDebug($"SelectedIndex updated {_selectedIndex} {CollectionJustChanged} {UserChangedIndex}");
+                if (CollectionJustChanged)
+                {
+                    if (!UserChangedIndex)
+                    {
+                        Task.Delay(0).ContinueWith(___ =>
+                        {
+                            Logger.WoxDebug($"set CollectionJustChanged = false and SelectedIndex = 0");
+                            CollectionJustChanged = false; // Delay setting CollectionJustChanged = false, because SelectedIndex could change multiple times (but to the same value) after collection changed
+                            SelectedIndex = NewIndex(0);
+                        });
+                    }
+                }
+                else
+                {
+                    UserChangedIndex = true;
+                }
+            }
+        }
 
         public ResultViewModel SelectedItem { get; set; }
         public Thickness Margin { get; set; }
@@ -75,6 +114,28 @@ namespace Wox.ViewModel
             }
         }
 
+        private int ContainedIndex(int i)
+        {
+            var n = Results.Count;
+            if (n > 0)
+            {
+                if (i < 0)
+                {
+                    return 0;
+                }
+                if (i >= n)
+                {
+                    return n - 1;
+                }
+                return i;
+            }
+            else
+            {
+                // SelectedIndex returns -1 if selection is empty.
+                return -1;
+            }
+        }
+
 
         #endregion
 
@@ -82,22 +143,22 @@ namespace Wox.ViewModel
 
         public void SelectNextResult()
         {
-            SelectedIndex = NewIndex(SelectedIndex + 1);
+            SelectedIndex = ContainedIndex(SelectedIndex + 1);
         }
 
         public void SelectPrevResult()
         {
-            SelectedIndex = NewIndex(SelectedIndex - 1);
+            SelectedIndex = ContainedIndex(SelectedIndex - 1);
         }
 
         public void SelectNextPage()
         {
-            SelectedIndex = NewIndex(SelectedIndex + MaxResults);
+            SelectedIndex = ContainedIndex(SelectedIndex + MaxResults);
         }
 
         public void SelectPrevPage()
         {
-            SelectedIndex = NewIndex(SelectedIndex - MaxResults);
+            SelectedIndex = ContainedIndex(SelectedIndex - MaxResults);
         }
 
         public void SelectFirstResult()
@@ -107,7 +168,10 @@ namespace Wox.ViewModel
 
         public void Clear()
         {
-            Results.RemoveAll();
+            lock (_collectionLock)
+            {
+                Results.RemoveAll();
+            }
         }
 
         public int Count => Results.Count;
@@ -132,18 +196,20 @@ namespace Wox.ViewModel
             CancellationToken token;
             try
             {
-                token = updates.Select(u => u.Token).Distinct().First();
+                token = updatesNotCanceled.Select(u => u.Token).Distinct().First();
             }
-            catch (InvalidOperationException e)
+            catch (InvalidOperationException)
             {
-                Logger.WoxError("more than one not canceled query result in same batch processing", e);
+                // This is common, so WoxEroor -> WoxInfo
+                Logger.WoxInfo("more than one not canceled query result in same batch processing"); // ?
                 return;
             }
+
 
             // https://stackoverflow.com/questions/14336750
             lock (_collectionLock)
             {
-                List<ResultViewModel> newResults = NewResults(updates, token);
+                List<ResultViewModel> newResults = NewResults(updatesNotCanceled.ToList(), token);
                 Logger.WoxDebug($"newResults {newResults.Count}");
                 Results.Update(newResults, token);
             }
@@ -161,6 +227,11 @@ namespace Wox.ViewModel
 
         private List<ResultViewModel> NewResults(List<ResultsForUpdate> updates, CancellationToken token)
         {
+            Logger.WoxDebug($"token {token.GetHashCode()}");
+            foreach (var result in Results)
+            {
+                Logger.WoxDebug($"result {result}");
+            }
             if (token.IsCancellationRequested) { return Results.ToList(); }
             var newResults = Results.ToList();
             if (updates.Count > 0)
@@ -178,6 +249,10 @@ namespace Wox.ViewModel
                 if (token.IsCancellationRequested) { return Results.ToList(); }
                 List<ResultViewModel> sorted = newResults.OrderByDescending(r => r.Result.Score).Take(MaxResults * 4).ToList();
 
+                foreach (var result in sorted)
+                {
+                    Logger.WoxDebug($"sorted {result.Result}");
+                }
                 return sorted;
             }
             else
@@ -221,6 +296,7 @@ namespace Wox.ViewModel
 
         public class ResultCollection : Collection<ResultViewModel>, INotifyCollectionChanged
         {
+            public event NotifyCollectionChangedEventHandler CollectionChangedPrioritized;
             public event NotifyCollectionChangedEventHandler CollectionChanged;
 
             public void RemoveAll()
@@ -241,6 +317,10 @@ namespace Wox.ViewModel
                 {
                     if (token.IsCancellationRequested) { break; }
                     this.Add(i);
+                }
+                if (CollectionChangedPrioritized != null)
+                {
+                    CollectionChangedPrioritized.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
                 }
                 if (CollectionChanged != null)
                 {
