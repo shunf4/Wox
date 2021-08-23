@@ -36,11 +36,15 @@ namespace Wox.ViewModel
             Results.CollectionChangedPrioritized += (_, __) =>
             {
                 // Mark collection as changed, so that the selected item should be updated to the first item in ResultListBox.
-                // When ResultListBox finished its update (I can find no suitable event; currently let us use SelectedIndex's TargetUpdated), CollectionJustChanged is checked. If it is true, set it to false, then update SelectedIndex to 0.
+                // When ResultListBox finished its update (I can find no suitable event; currently let us use SelectedIndex's TargetUpdated), CollectionJustChanged is hecked. If it is true, set it to false, then update SelectedIndex to 0.
                 CollectionJustChanged = true;
 
                 // Try Changing SelectedIndex, so that "SelectedIndex's TargetUpdated" aka SelectedIndex.set will always be invoked.
-                SelectedIndex = -1;
+                Task.Delay(50).ContinueWith(___ =>
+                {
+                    SelectedIndex = -1;
+                    SelectedIndex = 0;
+                });                
             };
         }
 
