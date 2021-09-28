@@ -28,6 +28,7 @@ namespace Wox.ViewModel
         private readonly object _collectionLock = new object();
         public volatile bool CollectionJustChanged = false;
         public volatile bool UserChangedIndex = false;
+        public object _selectedIndexLock = new object();
 
         public ResultsViewModel()
         {
@@ -40,7 +41,10 @@ namespace Wox.ViewModel
                 CollectionJustChanged = true;
 
                 // Try Changing SelectedIndex, so that "SelectedIndex's TargetUpdated" aka SelectedIndex.set will always be invoked.
-                SelectedIndex = -1;
+                Task.Delay(0).ContinueWith(___ =>
+                {
+                    SelectedIndex = -1;
+                });
             };
         }
 
@@ -69,24 +73,34 @@ namespace Wox.ViewModel
             get { return _selectedIndex; }
             set
             {
-                _selectedIndex = value;
+                lock (_selectedIndexLock)
+                {
+                    _selectedIndex = value;
 
-                Logger.WoxDebug($"SelectedIndex updated {_selectedIndex} {CollectionJustChanged} {UserChangedIndex}");
-                if (CollectionJustChanged)
-                {
-                    if (!UserChangedIndex)
+                    Logger.WoxInfo($"{Thread.CurrentThread.ManagedThreadId} SelectedIndex updated {_selectedIndex} {CollectionJustChanged} {UserChangedIndex}");
+                    // Logger.WoxInfo(Environment.StackTrace);
+                    if (CollectionJustChanged)
                     {
-                        Task.Delay(0).ContinueWith(___ =>
+                        if (!UserChangedIndex)
                         {
-                            Logger.WoxDebug($"set CollectionJustChanged = false and SelectedIndex = 0");
-                            CollectionJustChanged = false; // Delay setting CollectionJustChanged = false, because SelectedIndex could change multiple times (but to the same value) after collection changed
-                            SelectedIndex = NewIndex(0);
-                        });
+                            Task.Delay(50).ContinueWith(___ =>
+                            {
+                                Logger.WoxInfo($"set CollectionJustChanged = false and SelectedIndex = 0");
+                                CollectionJustChanged = false; // Delay setting CollectionJustChanged = false, because SelectedIndex could change multiple times (but to the same value) after collection changed
+                                SelectedIndex = NewIndex(0);
+                            });
+                        }
                     }
-                }
-                else
-                {
-                    UserChangedIndex = true;
+                    else if (value != -1 && value != 0)
+                    {
+                        Logger.WoxInfo("UserChangedIndex = true");
+                        UserChangedIndex = true;
+                    }
+
+                    if (_selectedIndex < 0)
+                    {
+                        _selectedIndex = 0;
+                    }
                 }
             }
         }
@@ -217,7 +231,6 @@ namespace Wox.ViewModel
             if (Results.Count > 0)
             {
                 Margin = new Thickness { Top = 8 };
-                SelectedIndex = 0;
             }
             else
             {
