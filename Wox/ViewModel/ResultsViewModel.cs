@@ -34,17 +34,17 @@ namespace Wox.ViewModel
         {
             Results = new ResultCollection();
             BindingOperations.EnableCollectionSynchronization(Results, _collectionLock);
-            Results.CollectionChangedPrioritized += (_, __) =>
+            Results.CollectionChangedPrioritized += (token) =>
             {
                 // Mark collection as changed, so that the selected item should be updated to the first item in ResultListBox.
-                // When ResultListBox finished its update (I can find no suitable event; currently let us use SelectedIndex's TargetUpdated), CollectionJustChanged is checked. If it is true, set it to false, then update SelectedIndex to 0.
+                // When ResultListBox finished its update (I can find no suitable event; currently let us use SelectedIndex's TargetUpdated), CollectionJustChanged is hecked. If it is true, set it to false, then update SelectedIndex to 0.
                 CollectionJustChanged = true;
 
                 // Try Changing SelectedIndex, so that "SelectedIndex's TargetUpdated" aka SelectedIndex.set will always be invoked.
                 Task.Delay(0).ContinueWith(___ =>
                 {
                     SelectedIndex = -1;
-                });
+                });                
             };
         }
 
@@ -77,7 +77,7 @@ namespace Wox.ViewModel
                 {
                     _selectedIndex = value;
 
-                    Logger.WoxInfo($"{Thread.CurrentThread.ManagedThreadId} SelectedIndex updated {_selectedIndex} {CollectionJustChanged} {UserChangedIndex}");
+                    Logger.WoxDebug($"{Thread.CurrentThread.ManagedThreadId} SelectedIndex updated {_selectedIndex} {CollectionJustChanged} {UserChangedIndex}");
                     // Logger.WoxInfo(Environment.StackTrace);
                     if (CollectionJustChanged)
                     {
@@ -85,21 +85,24 @@ namespace Wox.ViewModel
                         {
                             Task.Delay(50).ContinueWith(___ =>
                             {
-                                Logger.WoxInfo($"set CollectionJustChanged = false and SelectedIndex = 0");
+                                Logger.WoxDebug($"set CollectionJustChanged = false and SelectedIndex = 0");
                                 CollectionJustChanged = false; // Delay setting CollectionJustChanged = false, because SelectedIndex could change multiple times (but to the same value) after collection changed
-                                SelectedIndex = NewIndex(0);
+                                SelectedIndex = 0;
                             });
                         }
                     }
-                    else if (value != -1 && value != 0)
+                    else
                     {
-                        Logger.WoxInfo("UserChangedIndex = true");
-                        UserChangedIndex = true;
-                    }
+                        if (_selectedIndex < 0)
+                        {
+                            SelectedIndex = 0;
+                        }
 
-                    if (_selectedIndex < 0)
-                    {
-                        _selectedIndex = 0;
+                        if (value != -1 && value != 0)
+                        {
+                            Logger.WoxDebug("UserChangedIndex = true");
+                            UserChangedIndex = true;
+                        }
                     }
                 }
             }
@@ -307,9 +310,10 @@ namespace Wox.ViewModel
         }
         #endregion
 
+        public delegate void NotifyCollectionChangedPrioritizedEventHandler(CancellationToken token);
         public class ResultCollection : Collection<ResultViewModel>, INotifyCollectionChanged
         {
-            public event NotifyCollectionChangedEventHandler CollectionChangedPrioritized;
+            public event NotifyCollectionChangedPrioritizedEventHandler CollectionChangedPrioritized;
             public event NotifyCollectionChangedEventHandler CollectionChanged;
 
             public void RemoveAll()
@@ -333,7 +337,7 @@ namespace Wox.ViewModel
                 }
                 if (CollectionChangedPrioritized != null)
                 {
-                    CollectionChangedPrioritized.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+                    CollectionChangedPrioritized.Invoke(token);
                 }
                 if (CollectionChanged != null)
                 {

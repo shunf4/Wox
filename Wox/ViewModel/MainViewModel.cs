@@ -230,6 +230,7 @@ namespace Wox.ViewModel
 
                     if (SelectedIsFromQueryResults())
                     {
+                        Logger.WoxDebug($"_userSelectedRecord.Add({result.OriginQuery.RawQuery}, {result.ToString()}, {result.Title})");
                         _userSelectedRecord.Add(result);
                         _history.Add(result.OriginQuery.RawQuery);
                     }
@@ -782,6 +783,7 @@ namespace Wox.ViewModel
                         Logger.WoxDebug($"(Token expired, Skipping current plugin)");
                         break;
                     }
+                    Logger.WoxDebug($"KeepResultRawScore: {update.Metadata.KeepResultRawScore}");
                     if (_topMostRecord.IsTopMost(result))
                     {
                         result.Score = int.MaxValue;
