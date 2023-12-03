@@ -13,6 +13,9 @@ namespace Wox.Plugin.Everything.Everything
         internal static extern void Everything_SetMatchPath(bool bEnable);
 
         [DllImport(Main.DLL)]
+        internal static extern void Everything_SetSort(int sort);
+
+        [DllImport(Main.DLL)]
         internal static extern void Everything_SetMatchCase(bool bEnable);
 
         [DllImport(Main.DLL)]

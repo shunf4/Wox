@@ -105,7 +105,7 @@ namespace Wox.Plugin.Everything
 
             var r = new Result
             {
-                Score = _settings.MaxSearchCount - index,
+                Score = (_settings.MaxSearchCount - index) * 3,
                 Title = searchResult.FileName,
                 TitleHighlightData = searchResult.FileNameHightData,
                 SubTitle = searchResult.FullPath,

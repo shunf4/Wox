@@ -37,7 +37,7 @@
                     <GridViewColumn Header="{DynamicResource wox_plugin_program_location}" Width="550">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Location, ConverterParameter=(null), Converter={program:LocationConverter}}"/>
+                                <TextBlock Text="{Binding SettingEditSourceCode, ConverterParameter=(null), Converter={program:LocationConverter}}"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

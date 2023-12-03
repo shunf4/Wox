@@ -136,6 +136,12 @@ namespace Wox.Plugin.Everything.Everything
             {
                 EverythingApiDllImport.Everything_SetRegex(false);
             }
+            if (keyWord.EndsWith("..."))
+            {
+                EverythingApiDllImport.Everything_SetMatchPath(true);
+                EverythingApiDllImport.Everything_SetSort(3);
+                keyWord = keyWord.Substring(0, keyWord.Length - 3);
+            }
 
             var includedFoldersNotEmpty = includedFolders.Where(f => !f.Path.Trim().Equals("")).ToList();
             if (includedFoldersNotEmpty.Count != 0)
@@ -167,7 +173,7 @@ namespace Wox.Plugin.Everything.Everything
                 // https://www.voidtools.com/forum/viewtopic.php?t=8169
                 string fileNameHighted = Marshal.PtrToStringUni(EverythingApiDllImport.Everything_GetResultHighlightedFileNameW(idx));
                 string fullPathHighted = Marshal.PtrToStringUni(EverythingApiDllImport.Everything_GetResultHighlightedFullPathAndFileNameW(idx));
-                if (fileNameHighted == null | fullPathHighted == null)
+                if (fileNameHighted == null || fullPathHighted == null)
                 {
                     CheckAndThrowExceptionOnError();
                 }

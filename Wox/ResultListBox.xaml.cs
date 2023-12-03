@@ -35,15 +35,28 @@ namespace Wox
             var p = e.GetPosition((IInputElement)sender);
             if (_lastpos != p)
             {
-                ((ListBoxItem) sender).IsSelected = true;
+                // shunf4: Don't do that.
+                // ((ListBoxItem)sender).IsSelected = true;
             }
         }
 
         private void ListBox_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
+            //if (curItem != null)
+            //{
+            //    curItem.IsSelected = true;
+            //}
             if (curItem != null)
             {
-                curItem.IsSelected = true;
+                if (curItem.IsSelected)
+                {
+                    return;
+                }
+                else
+                {
+                    curItem.IsSelected = true;
+                    e.Handled = true;
+                }
             }
         }
     }

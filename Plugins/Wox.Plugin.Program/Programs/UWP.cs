@@ -48,96 +48,107 @@ namespace Wox.Plugin.Program.Programs
         private void InitializeAppInfo()
         {
             var path = Path.Combine(Location, "AppxManifest.xml");
-            using (var reader = XmlReader.Create(path))
+            try
             {
-                bool success = reader.ReadToFollowing("Package");
-                if (!success) { throw new ArgumentException($"Cannot read Package key from {path}"); }
-
-                Version = PackageVersion.Unknown;
-                for (int i = 0; i < reader.AttributeCount; i++)
+                using (var reader = XmlReader.Create(path))
                 {
-                    string schema = reader.GetAttribute(i);
-                    if (schema != null)
+                    bool success = reader.ReadToFollowing("Package");
+                    if (!success) { throw new ArgumentException($"Cannot read Package key from {path}"); }
+
+                    Version = PackageVersion.Unknown;
+                    for (int i = 0; i < reader.AttributeCount; i++)
                     {
-                        if (schema == "http://schemas.microsoft.com/appx/manifest/foundation/windows10")
+                        string schema = reader.GetAttribute(i);
+                        if (schema != null)
                         {
-                            Version = PackageVersion.Windows10;
+                            if (schema == "http://schemas.microsoft.com/appx/manifest/foundation/windows10")
+                            {
+                                Version = PackageVersion.Windows10;
+                            }
+                            else if (schema == "http://schemas.microsoft.com/appx/2013/manifest")
+                            {
+                                Version = PackageVersion.Windows81;
+                            }
+                            else if (schema == "http://schemas.microsoft.com/appx/2010/manifest")
+                            {
+                                Version = PackageVersion.Windows8;
+                            }
+                            else
+                            {
+                                continue;
+                            }
                         }
-                        else if (schema == "http://schemas.microsoft.com/appx/2013/manifest")
-                        {
-                            Version = PackageVersion.Windows81;
-                        }
-                        else if (schema == "http://schemas.microsoft.com/appx/2010/manifest")
-                        {
-                            Version = PackageVersion.Windows8;
-                        }
-                        else
-                        {
-                            continue;
-                        }
                     }
-                }
-                if (Version == PackageVersion.Unknown)
-                {
-                    throw new ArgumentException($"Unknowen schema version {path}");
-                }
-
-                success = reader.ReadToFollowing("Identity");
-                if (!success) { throw new ArgumentException($"Cannot read Identity key from {path}"); }
-                if (success)
-                {
-                    Name = reader.GetAttribute("Name");
-                }
-
-                success = reader.ReadToFollowing("Applications");
-                if (!success) { throw new ArgumentException($"Cannot read Applications key from {path}"); }
-                success = reader.ReadToDescendant("Application");
-                if (!success) { throw new ArgumentException($"Cannot read Applications key from {path}"); }
-                List<Application> apps = new List<Application>();
-                do
-                {
-                    string id = reader.GetAttribute("Id");
-
-                    reader.ReadToFollowing("uap:VisualElements");
-                    string displayName = reader.GetAttribute("DisplayName");
-                    string description = reader.GetAttribute("Description");
-                    string backgroundColor = reader.GetAttribute("BackgroundColor");
-                    string appListEntry = reader.GetAttribute("AppListEntry");
-
-                    if (appListEntry == "none")
-                    {
-                        continue;
-                    }
-
-                    string logoUri = string.Empty;
-                    if (Version == PackageVersion.Windows10)
-                    {
-                        logoUri = reader.GetAttribute("Square44x44Logo");
-                    }
-                    else if (Version == PackageVersion.Windows81)
-                    {
-                        logoUri = reader.GetAttribute("Square30x30Logo");
-                    }
-                    else if (Version == PackageVersion.Windows8)
-                    {
-                        logoUri = reader.GetAttribute("SmallLogo");
-                    }
-                    else
+                    if (Version == PackageVersion.Unknown)
                     {
                         throw new ArgumentException($"Unknowen schema version {path}");
                     }
 
-                    if (string.IsNullOrEmpty(displayName) || string.IsNullOrEmpty(id))
+                    success = reader.ReadToFollowing("Identity");
+                    if (!success) { throw new ArgumentException($"Cannot read Identity key from {path}"); }
+                    if (success)
                     {
-                        continue;
+                        Name = reader.GetAttribute("Name");
                     }
 
-                    string userModelId = $"{FamilyName}!{id}";
-                    Application app = new Application(this, userModelId, FullName, Name, displayName, description, logoUri, backgroundColor);
+                    success = reader.ReadToFollowing("Applications");
+                    if (!success) { throw new ArgumentException($"Cannot read Applications key from {path}"); }
+                    success = reader.ReadToDescendant("Application");
+                    if (!success) { throw new ArgumentException($"Cannot read Applications key from {path}"); }
+                    List<Application> apps = new List<Application>();
+                    do
+                    {
+                        string id = reader.GetAttribute("Id");
 
-                    apps.Add(app);
-                } while (reader.ReadToFollowing("Application"));
-                Apps = apps.ToArray();
+                        reader.ReadToFollowing("uap:VisualElements");
+                        string displayName = reader.GetAttribute("DisplayName");
+                        string description = reader.GetAttribute("Description");
+                        string backgroundColor = reader.GetAttribute("BackgroundColor");
+                        string appListEntry = reader.GetAttribute("AppListEntry");
+
+                        if (appListEntry == "none")
+                        {
+                            continue;
+                        }
+
+                        string logoUri = string.Empty;
+                        if (Version == PackageVersion.Windows10)
+                        {
+                            logoUri = reader.GetAttribute("Square44x44Logo");
+                        }
+                        else if (Version == PackageVersion.Windows81)
+                        {
+                            logoUri = reader.GetAttribute("Square30x30Logo");
+                        }
+                        else if (Version == PackageVersion.Windows8)
+                        {
+                            logoUri = reader.GetAttribute("SmallLogo");
+                        }
+                        else
+                        {
+                            throw new ArgumentException($"Unknowen schema version {path}");
+                        }
+
+                        if (string.IsNullOrEmpty(displayName) || string.IsNullOrEmpty(id))
+                        {
+                            continue;
+                        }
+
+                        string userModelId = $"{FamilyName}!{id}";
+                        Application app = new Application(this, userModelId, FullName, Name, displayName, description, logoUri, backgroundColor);
+
+                        apps.Add(app);
+                    } while (reader.ReadToFollowing("Application"));
+                    Apps = apps.ToArray();
+                }
+            } catch (System.IO.FileNotFoundException e)
+            {
+                Logger.WoxInfo("Warn: " + (e.Message ?? ""));
+
+                Name = "Error";
+                Location = "Error";
+                Apps = new Application[0];
+                Version = new PackageVersion();
             }
         }
 
