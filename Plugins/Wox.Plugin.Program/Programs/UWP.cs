@@ -169,43 +169,56 @@ namespace Wox.Plugin.Program.Programs
         {
 
             var actiable = new HashSet<string>();
+            foreach (var x in new Windows.Management.Deployment.PackageManager().FindPackagesForUser(""))
+            {
+                actiable.Add(x.Id.FullName);
+            }
             string activableReg = @"Software\Classes\ActivatableClasses\Package";
             var activableRegSubkey = Registry.CurrentUser.OpenSubKey(activableReg);
-            foreach (string name in activableRegSubkey.GetSubKeyNames())
+            if (activableRegSubkey?.GetSubKeyNames()?.Any() ?? false)
             {
-                actiable.Add(name);
+                foreach (string name in activableRegSubkey.GetSubKeyNames())
+                {
+                    actiable.Add(name);
+                }
             }
 
             var packages = new List<UWP>();
             string packageReg = @"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages";
             var packageRegSubkey = Registry.CurrentUser.OpenSubKey(packageReg);
-            foreach (var name in packageRegSubkey.GetSubKeyNames())
+            if (packageRegSubkey?.GetSubKeyNames()?.Any() ?? false)
             {
-                var packageKey = packageRegSubkey.OpenSubKey(name);
-                var framework = packageKey.GetValue("Framework");
-                if (framework != null)
+                foreach (var name in packageRegSubkey.GetSubKeyNames())
                 {
-                    if ((int)framework == 1)
+                    var packageKey = packageRegSubkey.OpenSubKey(name);
+                    var framework = packageKey.GetValue("Framework");
+                    if (framework != null)
                     {
-                        continue;
+                        if ((int)framework == 1)
+                        {
+                            continue;
+                        }
                     }
-                }
-                var valueFolder = packageKey.GetValue("PackageRootFolder");
-                var valueID = packageKey.GetValue("PackageID");
-                if (valueID != null && valueFolder != null && actiable.Contains(valueID))
-                {
-                    string location = (string)valueFolder;
-                    string id = (string)valueID;
-                    UWP uwp = new UWP(id, location);
-                    packages.Add(uwp);
+                    var valueFolder = packageKey.GetValue("PackageRootFolder");
+                    var valueID = packageKey.GetValue("PackageID");
+                    if (valueID != null && valueFolder != null && actiable.Contains(valueID))
+                    {
+                        string location = (string)valueFolder;
+                        string id = (string)valueID;
+                        UWP uwp = new UWP(id, location);
+                        packages.Add(uwp);
+                    }
                 }
             }
 
             // only exception windows.immersivecontrolpanel_10.0.2.1000_neutral_neutral_cw5n1h2txyewy
-            string settingsID = actiable.First(a => a.StartsWith("windows.immersivecontrolpanel"));
-            string settingsLocation = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "ImmersiveControlPanel");
-            UWP swttings = new UWP(settingsID, settingsLocation);
-            packages.Add(swttings);
+            string settingsID = actiable.FirstOrDefault(a => a.StartsWith("windows.immersivecontrolpanel"));
+            if (settingsID != null)
+            {
+                string settingsLocation = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "ImmersiveControlPanel");
+                UWP swttings = new UWP(settingsID, settingsLocation);
+                packages.Add(swttings);
+            }
 
             return packages;
         }

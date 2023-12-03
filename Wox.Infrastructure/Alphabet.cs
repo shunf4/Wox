@@ -36,7 +36,7 @@ namespace Wox.Infrastructure
                 {
                     if (WordsHelper.HasChinese(content))
                     {
-                        result = WordsHelper.GetFirstPinyin(content);
+                        result = content + " " + WordsHelper.GetFirstPinyin(content);
                     }
                     else
                     {
