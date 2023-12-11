@@ -105,10 +105,10 @@ namespace Wox.Plugin.Everything
 
             var r = new Result
             {
-                Score = (_settings.MaxSearchCount - index) * 3,
+                Score = (_settings.MaxSearchCount - index) * 110 / _settings.MaxSearchCount,
                 Title = searchResult.FileName,
                 TitleHighlightData = searchResult.FileNameHightData,
-                SubTitle = searchResult.FullPath,
+                SubTitle = "[Everything] " + searchResult.FullPath,
                 SubTitleHighlightData = searchResult.FullPathHightData,
                 IcoPath = searchResult.FullPath,
                 Action = c =>

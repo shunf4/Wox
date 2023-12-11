@@ -7,7 +7,7 @@ namespace Wox.Plugin.Everything
 {
     public class Settings
     {
-        public const int DefaultMaxSearchCount = 30;
+        public const int DefaultMaxSearchCount = 7;
 
         public string EditorPath { get; set; } = "";
 

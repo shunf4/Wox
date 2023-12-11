@@ -124,9 +124,17 @@ namespace Wox.Plugin.Program.Programs
         {
             try
             {
+                string name;
+                if (path.EndsWith(".lnk"))
+                {
+                    name = Path.GetFileNameWithoutExtension(path);
+                } else
+                {
+                    name = Path.GetFileName(path);
+                }
                 var p = new Win32
                 {
-                    Name = Path.GetFileNameWithoutExtension(path),
+                    Name = name,
                     IcoPath = path,
                     FullPath = path,
                     ParentDirectory = Directory.GetParent(path).FullName,

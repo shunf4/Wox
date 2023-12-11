@@ -384,6 +384,14 @@ namespace Wox.ViewModel
             if (selected != null) // SelectedItem returns null if selection is empty.
             {
                 var results = PluginManager.GetContextMenusForPlugin(selected);
+                results.Add(new Result
+                {
+                    Title = "Score: " + selected.Score,
+                    IcoPath = null,
+                    SubTitle = "",
+                    PluginDirectory = Constant.ProgramDirectory,
+                    Action = _ => false
+                });
                 results.Add(ContextMenuTopMost(selected));
                 results.Add(ContextMenuPluginInfo(selected.PluginID));
 
