@@ -66,7 +66,7 @@ namespace Wox.Plugin.Program
                     SubTitle = "Reindex Programs",
                     Action = c =>
                     {
-                        IndexPrograms();
+                        IndexPrograms(true);
                         return true;
                     }
                 },
@@ -194,7 +194,7 @@ namespace Wox.Plugin.Program
             Task.Delay(2000).ContinueWith(_ =>
             {
                 Logger.WoxInfo("Program: IndexPrograms()");
-                IndexPrograms();
+                IndexPrograms(true);
                 Save();
                 Logger.WoxInfo("Program: IndexPrograms() Done");
             });
@@ -206,7 +206,7 @@ namespace Wox.Plugin.Program
                 dispatcherTimer.Tick += (__, ___) =>
                 {
                     Logger.WoxInfo("Program: IndexPrograms() in interval loop");
-                    IndexPrograms();
+                    IndexPrograms(false);
                     Save();
                     Logger.WoxInfo("Program: IndexPrograms() in interval loop Done");
                 };
@@ -219,7 +219,7 @@ namespace Wox.Plugin.Program
         {
             _context = context;
             loadSettings();
-            IndexPrograms();
+            IndexPrograms(true);
         }
 
         public void loadSettings()
@@ -243,7 +243,7 @@ namespace Wox.Plugin.Program
             _uwps = applications;
         }
 
-        public static void IndexPrograms()
+        public static void IndexPrograms(bool showBalloonResult)
         {
             var a = Task.Run(() =>
             {
@@ -267,19 +267,22 @@ namespace Wox.Plugin.Program
             {
                 Logger.WoxDebug($" uwp: <{uwp.DisplayName}> <{uwp.UserModelId}>");
             }
-            
-            notify.Visible = true;
-            notify.Icon = System.Drawing.SystemIcons.Information;
-            notify.ShowBalloonTip(3000, "Wox Program Index Done", $"Win32 Progs: {_win32s.Length}; UWP Progs: {_uwps.Length}", System.Windows.Forms.ToolTipIcon.Info);
 
             _settings.LastIndexTime = DateTime.Today;
 
-            new Timer(state =>
+            if (showBalloonResult)
             {
-                notify.Visible = false;
                 notify.Visible = true;
-                notify.Visible = false;
-            }, null, 3000, 0);
+                notify.Icon = System.Drawing.SystemIcons.Information;
+                notify.ShowBalloonTip(3000, "Wox Program Index Done", $"Win32 Progs: {_win32s.Length}; UWP Progs: {_uwps.Length}", System.Windows.Forms.ToolTipIcon.Info);
+
+                new Timer(state =>
+                {
+                    notify.Visible = false;
+                    notify.Visible = true;
+                    notify.Visible = false;
+                }, null, 3000, 0);
+            }
 
         }
 
@@ -326,7 +329,7 @@ namespace Wox.Plugin.Program
 
         public void ReloadData()
         {
-            IndexPrograms();
+            IndexPrograms(true);
         }
     }
 }
