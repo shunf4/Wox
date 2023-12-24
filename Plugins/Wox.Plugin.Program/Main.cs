@@ -33,6 +33,8 @@ namespace Wox.Plugin.Program
 
         private static readonly NLog.Logger Logger = LogManager.GetCurrentClassLogger();
 
+        private static System.Windows.Forms.NotifyIcon notify = new System.Windows.Forms.NotifyIcon();
+
         private static void preloadPrograms()
         {
             Logger.StopWatchNormal("Preload programs cost", () =>
@@ -51,6 +53,25 @@ namespace Wox.Plugin.Program
             _settingsStorage.Save();
             _win32Storage.Save(_win32s);
             _uwpStorage.Save(_uwps);
+        }
+
+        private List<Result> Commands()
+        {
+            var results = new List<Result>();
+            results.AddRange(new[]
+            {
+                new Result
+                {
+                    Title = "Reindex Programs",
+                    SubTitle = "Reindex Programs",
+                    Action = c =>
+                    {
+                        IndexPrograms();
+                        return true;
+                    }
+                },
+            });
+            return results;
         }
 
         public List<Result> Query(Query query)
@@ -110,6 +131,17 @@ namespace Wox.Plugin.Program
                         }
                     }
                 });
+                
+                foreach (var r in Commands())
+                {
+                    var titleMatch = StringMatcher.FuzzySearch(query.Search, r.Title);
+                    if (titleMatch.Score > 0)
+                    {
+                        r.Score = titleMatch.Score;
+                        r.TitleHighlightData = titleMatch.MatchData;
+                        resultRaw.Add(r);
+                    }
+                }
 
                 if (token.IsCancellationRequested) { return new List<Result>(); }
                 OrderedParallelQuery<Result> sorted = null;
@@ -235,8 +267,20 @@ namespace Wox.Plugin.Program
             {
                 Logger.WoxDebug($" uwp: <{uwp.DisplayName}> <{uwp.UserModelId}>");
             }
-            _settings.LastIndexTime = DateTime.Today;
             
+            notify.Visible = true;
+            notify.Icon = System.Drawing.SystemIcons.Information;
+            notify.ShowBalloonTip(3000, "Wox Program Index Done", $"Win32 Progs: {_win32s.Length}; UWP Progs: {_uwps.Length}", System.Windows.Forms.ToolTipIcon.Info);
+
+            _settings.LastIndexTime = DateTime.Today;
+
+            new Timer(state =>
+            {
+                notify.Visible = false;
+                notify.Visible = true;
+                notify.Visible = false;
+            }, null, 3000, 0);
+
         }
 
         public Control CreateSettingPanel()
