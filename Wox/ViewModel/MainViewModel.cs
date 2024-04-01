@@ -481,7 +481,7 @@ namespace Wox.ViewModel
                 if (!string.IsNullOrEmpty(queryText))
                 {
                     if (token.IsCancellationRequested) { return; }
-                    var query = QueryBuilder.Build(queryText, PluginManager.NonGlobalPlugins);
+                    var query = QueryBuilder.Build(queryText, QueryText, PluginManager.NonGlobalPlugins);
                     _lastQuery = query;
                     if (query != null)
                     {

@@ -15,7 +15,7 @@ namespace Wox.Test
                 {">", new PluginPair {Metadata = new PluginMetadata {ActionKeywords = new List<string> {">"}}}}
             };
 
-            Query q = QueryBuilder.Build(">   file.txt    file2 file3", nonGlobalPlugins);
+            Query q = QueryBuilder.Build(">   file.txt    file2 file3", ">   file.txt    file2 file3", nonGlobalPlugins);
 
             Assert.AreEqual("file.txt file2 file3", q.Search);
             Assert.AreEqual(">", q.ActionKeyword);
@@ -29,7 +29,7 @@ namespace Wox.Test
                 {">", new PluginPair {Metadata = new PluginMetadata {ActionKeywords = new List<string> {">"}, Disabled = true}}}
             };
 
-            Query q = QueryBuilder.Build(">   file.txt    file2 file3", nonGlobalPlugins);
+            Query q = QueryBuilder.Build(">   file.txt    file2 file3", ">   file.txt    file2 file3", nonGlobalPlugins);
 
             Assert.AreEqual("> file.txt file2 file3", q.Search);
         }
@@ -37,7 +37,7 @@ namespace Wox.Test
         [Test]
         public void GenericPluginQueryTest()
         {
-            Query q = QueryBuilder.Build("file.txt file2 file3", new Dictionary<string, PluginPair>());
+            Query q = QueryBuilder.Build("file.txt file2 file3", "file.txt file2 file3", new Dictionary<string, PluginPair>());
 
             Assert.AreEqual("file.txt file2 file3", q.Search);
             Assert.AreEqual("", q.ActionKeyword);

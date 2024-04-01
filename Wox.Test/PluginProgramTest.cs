@@ -43,7 +43,7 @@ namespace Wox.Test
         [TestCase("computer", "computer")]
         public void Win32Test(string QueryText, string ResultTitle)
         {
-            Query query = QueryBuilder.Build(QueryText.Trim(), new Dictionary<string, PluginPair>());
+            Query query = QueryBuilder.Build(QueryText.Trim(), QueryText, new Dictionary<string, PluginPair>());
             Result result = plugin.Query(query).OrderByDescending(r => r.Score).First();
             Assert.IsTrue(result.Title.StartsWith(ResultTitle));
         }

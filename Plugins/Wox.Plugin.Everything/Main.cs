@@ -52,11 +52,12 @@ namespace Wox.Plugin.Everything
             if (!string.IsNullOrEmpty(query.Search))
             {
                 var keyword = query.Search;
+                var keywordWithoutTrim = query.OrigQueryWithoutTrim;
 
                 try
                 {
                     if (token.IsCancellationRequested) { return results; }
-                    var searchList = _api.Search(keyword, token, _settings.MaxSearchCount, _settings.IncludedFolders);
+                    var searchList = _api.Search(keyword, keywordWithoutTrim, token, _settings.MaxSearchCount, _settings.IncludedFolders);
                     if (token.IsCancellationRequested) { return results; }
                     for (int i = 0; i < searchList.Count; i++)
                     {

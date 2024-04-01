@@ -33,6 +33,8 @@ namespace Wox.Plugin
         /// </summary>
         public string Search { get; internal set; }
 
+        public string OrigQueryWithoutTrim { get; internal set; }
+
         /// <summary>
         /// The raw query splited into a string array.
         /// </summary>
