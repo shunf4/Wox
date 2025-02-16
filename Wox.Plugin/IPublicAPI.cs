@@ -57,6 +57,8 @@ namespace Wox.Plugin
         [Obsolete]
         void ShowApp();
 
+        void BalloonTip(string title, string text);
+
         /// <summary>
         /// Save all Wox settings
         /// </summary>

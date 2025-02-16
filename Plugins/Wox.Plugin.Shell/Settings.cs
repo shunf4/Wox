@@ -7,9 +7,11 @@ namespace Wox.Plugin.Shell
     public class Settings
     {
         public Shell Shell { get; set; } = Shell.Cmd;
-        public bool ReplaceWinR { get; set; } = true;
+        public bool ReplaceWinR { get; set; } = false;
+        public bool ReplaceWinF { get; set; } = false;
+        public bool ReplaceWinS { get; set; } = false;
         public bool LeaveShellOpen { get; set; }
-        public bool RunAsAdministrator { get; set; } = true;
+        public bool RunAsAdministrator { get; set; } = false;
 
         public Dictionary<string, int> Count = new Dictionary<string, int>();
         public bool SupportWSL { get; private set; }

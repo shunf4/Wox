@@ -142,14 +142,17 @@ namespace Wox.Plugin.Everything.Everything
                 EverythingApiDllImport.Everything_SetSort(3);
                 keyWord = keyWord.Substring(0, keyWord.Length - 3);
             }
-            else if (keywordWithoutTrim.EndsWith(" "))
+            else if (keywordWithoutTrim.EndsWith("  "))
+            {
+                EverythingApiDllImport.Everything_SetMatchPath(false);
+                EverythingApiDllImport.Everything_SetSort(1);
+            } else if (keywordWithoutTrim.EndsWith(" "))
             {
                 EverythingApiDllImport.Everything_SetMatchPath(true);
                 EverythingApiDllImport.Everything_SetSort(3);
             } else
             {
-                EverythingApiDllImport.Everything_SetMatchPath(false);
-                EverythingApiDllImport.Everything_SetSort(1);
+                return results;
             }
 
             var includedFoldersNotEmpty = includedFolders.Where(f => !f.Path.Trim().Equals("")).ToList();

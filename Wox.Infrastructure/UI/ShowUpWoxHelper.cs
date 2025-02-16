@@ -20,6 +20,7 @@ namespace Wox.Infrastructure.UI
             }
             catch (System.Exception) {
                 mainWindow.Visibility = Visibility.Visible;
+                // mainWindow.Activate();
             }
             
         }

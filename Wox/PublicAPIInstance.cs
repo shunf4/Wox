@@ -94,6 +94,11 @@ namespace Wox
             _mainVM.RequestShowUpWox();
         }
 
+        public void BalloonTip(string title, string text)
+        {
+            _mainVM.RequestBalloonTip(title, text);
+        }
+
         public void ShowMsg(string title, string subTitle = "", string iconPath = "")
         {
             ShowMsg(title, subTitle, iconPath, true);
@@ -168,7 +173,14 @@ namespace Wox
         {
             if (GlobalKeyboardEvent != null)
             {
-                return GlobalKeyboardEvent((int)keyevent, vkcode, state);
+                foreach (Delegate d in GlobalKeyboardEvent.GetInvocationList())
+                {
+                    bool shouldContinue = (bool)d.DynamicInvoke((int)keyevent, vkcode, state);
+                    if (!shouldContinue)
+                    {
+                        return false;
+                    }
+                }
             }
             return true;
         }

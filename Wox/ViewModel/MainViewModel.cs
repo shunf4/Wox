@@ -287,6 +287,8 @@ namespace Wox.ViewModel
         }
 
         public event EventHandler ShowUpWoxRequested;
+        public delegate void NotifyIconShowBalloonTipCallback(string title, string text);
+        public event NotifyIconShowBalloonTipCallback NotifyIconShowBalloonTipRequested;
 
         /// <summary>
         /// we need move cursor to end when we manually changed query
@@ -739,7 +741,11 @@ namespace Wox.ViewModel
                     throw new ArgumentException($"wrong LastQueryMode: <{_settings.LastQueryMode}>");
                 }
 
-                ToggleWox();
+                //ToggleWox();
+                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    ShowUpWoxHelper.ShowUpWox();
+                }));
                 e.Handled = true;
             }
         }
@@ -836,6 +842,11 @@ namespace Wox.ViewModel
         public void RequestShowUpWox()
         {
             ShowUpWoxRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void RequestBalloonTip(string title, string text)
+        {
+            NotifyIconShowBalloonTipRequested?.Invoke(title, text);
         }
 
         public void HideWox()

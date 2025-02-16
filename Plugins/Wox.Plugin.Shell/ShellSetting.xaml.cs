@@ -6,7 +6,7 @@ namespace Wox.Plugin.Shell
     public partial class CMDSetting : UserControl
     {
         private readonly Settings _settings;
-
+        
         public CMDSetting(Settings settings)
         {
             InitializeComponent();
@@ -16,6 +16,8 @@ namespace Wox.Plugin.Shell
         private void CMDSetting_OnLoaded(object sender, RoutedEventArgs re)
         {
             ReplaceWinR.IsChecked = _settings.ReplaceWinR;
+            ReplaceWinF.IsChecked = _settings.ReplaceWinF;
+            ReplaceWinS.IsChecked = _settings.ReplaceWinS;
             LeaveShellOpen.IsChecked = _settings.LeaveShellOpen;
             AlwaysRunAsAdministrator.IsChecked = _settings.RunAsAdministrator;
             LeaveShellOpen.IsEnabled = _settings.Shell != Shell.RunCommand;
@@ -47,6 +49,22 @@ namespace Wox.Plugin.Shell
             ReplaceWinR.Unchecked += (o, e) =>
             {
                 _settings.ReplaceWinR = false;
+            };
+            ReplaceWinF.Checked += (o, e) =>
+            {
+                _settings.ReplaceWinF = true;
+            };
+            ReplaceWinF.Unchecked += (o, e) =>
+            {
+                _settings.ReplaceWinF = false;
+            };
+            ReplaceWinS.Checked += (o, e) =>
+            {
+                _settings.ReplaceWinS = true;
+            };
+            ReplaceWinS.Unchecked += (o, e) =>
+            {
+                _settings.ReplaceWinS = false;
             };
 
             ShellComboBox.SelectedIndex = (int) _settings.Shell;

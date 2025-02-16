@@ -272,15 +272,16 @@ namespace Wox.Plugin.Program
 
             if (showBalloonResult)
             {
-                notify.Visible = true;
-                notify.Icon = System.Drawing.SystemIcons.Information;
-                notify.ShowBalloonTip(3000, "Wox Program Index Done", $"Win32 Progs: {_win32s.Length}; UWP Progs: {_uwps.Length}", System.Windows.Forms.ToolTipIcon.Info);
+                _context.API.BalloonTip("Wox Program Index Done", $"Win32 Progs: {_win32s.Length}; UWP Progs: {_uwps.Length}");
 
                 new Timer(state =>
                 {
-                    notify.Visible = false;
-                    notify.Visible = true;
-                    notify.Visible = false;
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        notify.Visible = false;
+                        notify.Visible = true;
+                        notify.Visible = false;
+                    });
                 }, null, 3000, 0);
             }
 

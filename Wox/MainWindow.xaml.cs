@@ -42,6 +42,10 @@ namespace Wox
             {
                 ShowUpWox();
             };
+            _viewModel.NotifyIconShowBalloonTipRequested += (title, text) =>
+            {
+                _notifyIcon.ShowBalloonTip(3000, title, text, System.Windows.Forms.ToolTipIcon.Info);
+            };
             InitializeComponent();
         }
         public MainWindow()
@@ -317,7 +321,9 @@ namespace Wox
         {
             if (_viewModel.QueryTextCursorMovedToEnd)
             {
-                QueryTextBox.CaretIndex = QueryTextBox.Text.Length;
+                QueryTextBox.Select(QueryTextBox.Text.Length, 0);
+                // Prevent subsequent QueryTextBox.SelectAll();
+                _viewModel.LastQuerySelected = true;
                 _viewModel.QueryTextCursorMovedToEnd = false;
             }
         }

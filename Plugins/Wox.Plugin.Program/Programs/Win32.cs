@@ -125,7 +125,7 @@ namespace Wox.Plugin.Program.Programs
             try
             {
                 string name;
-                if (path.EndsWith(".lnk"))
+                if (path.ToLower().EndsWith(".lnk"))
                 {
                     name = Path.GetFileNameWithoutExtension(path);
                 } else
@@ -160,6 +160,10 @@ namespace Wox.Plugin.Program.Programs
                 IEnumerable<string> files = Directory.EnumerateFiles(directory, "*", searchOption);
                 foreach (var path in files)
                 {
+                    if (path.Contains("\\node_modules") || path.Contains("\\.git\\") || path.Contains("\\site-packages\\") || path.Contains("\\VENV\\"))
+                    {
+                        continue;
+                    }
                     var extension = Path.GetExtension(path);
                     if (extension.Length > 1)
                     {
@@ -175,6 +179,14 @@ namespace Wox.Plugin.Program.Programs
                     IEnumerable<string> dirs = Directory.EnumerateDirectories(directory, "*", searchOption);
                     foreach (var path in dirs)
                     {
+                        if (path.Contains("\\node_modules") || path.Contains("\\.git\\") || path.Contains("\\site-packages\\") || path.Contains("\\VENV\\"))
+                        {
+                            continue;
+                        }
+                        if (path.EndsWith("\\.git") || path.EndsWith("\\site-packages") || path.EndsWith("\\VENV"))
+                        {
+                            continue;
+                        }
                         paths.Add(path);
                     }
                 }

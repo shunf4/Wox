@@ -13,6 +13,8 @@
                 <RowDefinition/>
                 <RowDefinition/>
                 <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
             </Grid.RowDefinitions>
             <CheckBox Grid.Row="0" x:Name="ReplaceWinR" Content="{DynamicResource wox_plugin_cmd_relace_winr}" Margin="10" HorizontalAlignment="Left"/>
             <CheckBox Grid.Row="1" x:Name="LeaveShellOpen" Content="{DynamicResource wox_plugin_cmd_leave_cmd_open}" Margin="10" HorizontalAlignment="Left"/>
@@ -22,6 +24,8 @@
                 <ComboBoxItem>PowerShell</ComboBoxItem>
                 <ComboBoxItem>RunCommand</ComboBoxItem>
             </ComboBox>
+            <CheckBox Grid.Row="4" x:Name="ReplaceWinF" Content="ReplaceWinF" Margin="10" HorizontalAlignment="Left"/>
+            <CheckBox Grid.Row="5" x:Name="ReplaceWinS" Content="ReplaceWinS" Margin="10" HorizontalAlignment="Left"/>
         </Grid>
     </Border>
 </UserControl>
