@@ -401,7 +401,7 @@ namespace Wox.Plugin.Shell
         {
             if (_settings.ReplaceWinR)
             {
-                if (keyevent == (int)KeyEvent.WM_KEYDOWN && vkcode == (int)Keys.R && state.WinPressed)
+                if (keyevent == (int)KeyEvent.WM_KEYDOWN && vkcode == (int)Keys.R && state.WinPressed && !state.AltPressed && !state.CtrlPressed && !state.ShiftPressed)
                 {
                     _winRStroked = true;
                     OnWinRPressed();
@@ -416,7 +416,7 @@ namespace Wox.Plugin.Shell
             }
             if (_settings.ReplaceWinF)
             {
-                if (keyevent == (int)KeyEvent.WM_KEYDOWN && vkcode == (int)Keys.F && state.WinPressed)
+                if (keyevent == (int)KeyEvent.WM_KEYDOWN && vkcode == (int)Keys.F && state.WinPressed && !state.AltPressed && !state.CtrlPressed && !state.ShiftPressed)
                 {
                     _winFStroked = true;
                     OnWinRPressed();
@@ -431,7 +431,7 @@ namespace Wox.Plugin.Shell
             }
             if (_settings.ReplaceWinS)
             {
-                if (keyevent == (int)KeyEvent.WM_KEYDOWN && vkcode == (int)Keys.S && state.WinPressed)
+                if (keyevent == (int)KeyEvent.WM_KEYDOWN && vkcode == (int)Keys.S && state.WinPressed && !state.AltPressed && !state.CtrlPressed && !state.ShiftPressed)
                 {
                     _winSStroked = true;
                     OnWinRPressed();
@@ -447,14 +447,79 @@ namespace Wox.Plugin.Shell
             return true;
         }
 
+        public static bool ApplicationIsActivated()
+        {
+            var activatedHandle = GetForegroundWindow();
+            if (activatedHandle == IntPtr.Zero)
+            {
+                return false;       // No window is currently activated
+            }
+
+            var procId = Process.GetCurrentProcess().Id;
+            int activeProcId;
+            GetWindowThreadProcessId(activatedHandle, out activeProcId);
+
+            return activeProcId == procId;
+        }
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetWindowThreadProcessId(IntPtr handle, out int processId);
+
         private void OnWinRPressed()
         {
-            // Otherwise may fail to bring to foreground
+            // Sometimes may fail to bring to foreground
+            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _context.API.ChangeQuery($"{_context.CurrentPluginMetadata.ActionKeywords[0]}{Plugin.Query.TermSeperater}");
+                _context.API.ShowApp();
+            }));
             Task.Delay(10).ContinueWith(t => {
                 Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    _context.API.ChangeQuery($"{_context.CurrentPluginMetadata.ActionKeywords[0]}{Plugin.Query.TermSeperater}");
-                    _context.API.ShowApp();
+                    if (!ApplicationIsActivated())
+                    {
+                        _context.API.ShowApp();
+                    }
+                }));
+            });
+            Task.Delay(50).ContinueWith(t => {
+                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (!ApplicationIsActivated())
+                    {
+                        _context.API.ShowApp();
+                    }
+                }));
+            });
+            Task.Delay(100).ContinueWith(t =>
+            {
+                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (!ApplicationIsActivated())
+                    {
+                        _context.API.ShowApp();
+                    }
+                }));
+            });
+            Task.Delay(200).ContinueWith(t => {
+                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (!ApplicationIsActivated())
+                    {
+                        _context.API.ShowApp();
+                    }
+                }));
+            });
+            Task.Delay(400).ContinueWith(t => {
+                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (!ApplicationIsActivated())
+                    {
+                        _context.API.ShowApp();
+                    }
                 }));
             });
         }

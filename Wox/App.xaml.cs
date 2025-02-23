@@ -203,6 +203,7 @@ namespace Wox
                 // should notify child thread programmaly
                 Environment.Exit(0);
             }
+            SingleInstance<App>.Cleanup();
             Logger.WoxInfo("Wox End Displose");
         }
 
