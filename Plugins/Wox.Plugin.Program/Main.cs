@@ -62,8 +62,8 @@ namespace Wox.Plugin.Program
             {
                 new Result
                 {
-                    Title = "Reindex Programs",
-                    SubTitle = "Reindex Programs",
+                    Title = "Reindex Programs (Reload, Refresh Programs)",
+                    SubTitle = "Reindex Programs (Reload, Refresh Programs)",
                     Action = c =>
                     {
                         IndexPrograms(true);

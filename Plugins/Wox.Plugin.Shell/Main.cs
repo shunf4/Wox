@@ -131,7 +131,7 @@ namespace Wox.Plugin.Shell
                         }
                     };
                     return ret;
-                }).Where(o => o != null).Take(4);
+                }).Where(o => o != null).Take(20);
             return history.ToList();
         }
 
@@ -166,7 +166,7 @@ namespace Wox.Plugin.Shell
                         Execute(Process.Start, PrepareProcessStartInfo(m.Key), m.Key, _settings.RunAsAdministrator);
                         return true;
                     }
-                }).Take(5);
+                }).Take(20);
             return history.ToList();
         }
 
