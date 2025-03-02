@@ -109,7 +109,7 @@ namespace Wox.Plugin.Shell
 
         private List<Result> GetHistoryCmds(string cmd, Result result)
         {
-            IEnumerable<Result> history = _settings.Count.Where(o => o.Key.Contains(cmd))
+            IEnumerable<Result> history = _settings.Count.Where(o => o.Key.IndexOf(cmd, System.StringComparison.OrdinalIgnoreCase) >= 0)
                 .OrderByDescending(o => o.Value)
                 .Select(m =>
                 {
