@@ -85,6 +85,12 @@
                               SelectedItem="{Binding Settings.QuerySearchPrecisionString}" />
                 </StackPanel>
                 <StackPanel Margin="10" Orientation="Horizontal">
+                        <TextBlock Text="EnterKeyBehaviousWhenQuerying" />
+                    <ComboBox Margin="10 0 0 0"
+                    ItemsSource="{Binding EnterKeyBehaviousWhenQuerying_List}" 
+                    SelectedItem="{Binding Settings.EnterKeyBehaviousWhenQuerying}" />
+                </StackPanel>
+                    <StackPanel Margin="10" Orientation="Horizontal">
                     <TextBlock Text="{DynamicResource lastQueryMode}" />
                     <ComboBox Margin="10 0 0 0"
                               ItemsSource="{Binding LastQueryModes}" SelectedValue="{Binding Settings.LastQueryMode}"

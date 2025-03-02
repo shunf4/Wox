@@ -25,6 +25,7 @@
         LocationChanged="OnLocationChanged"
         Deactivated="OnDeactivated"
         PreviewKeyDown="OnKeyDown"
+        PreviewKeyUp="OnKeyUp"
         Visibility="{Binding MainWindowVisibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
         d:DataContext="{d:DesignInstance vm:MainViewModel}">
     <Window.Resources>
@@ -44,20 +45,21 @@
         <KeyBinding Key="U" Modifiers="Ctrl" Command="{Binding SelectPrevPageCommand}"></KeyBinding>
         <KeyBinding Key="Home" Modifiers="Alt" Command="{Binding SelectFirstResultCommand}"></KeyBinding>
         <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding LoadContextMenuCommand}"></KeyBinding>
+        <KeyBinding Key="Apps" Command="{Binding LoadContextMenuCommand}"></KeyBinding>
         <KeyBinding Key="H" Modifiers="Ctrl" Command="{Binding LoadHistoryCommand}"></KeyBinding>
         <KeyBinding Key="Enter" Modifiers="Shift" Command="{Binding LoadContextMenuCommand}"></KeyBinding>
-        <KeyBinding Key="Enter" Command="{Binding OpenResultCommand}"></KeyBinding>
-        <KeyBinding Key="Enter" Modifiers="Ctrl" Command="{Binding OpenResultCommand}"></KeyBinding>
-        <KeyBinding Key="Enter" Modifiers="Alt" Command="{Binding OpenResultCommand}"></KeyBinding>
-        <KeyBinding Key="D1" Modifiers="Alt" Command="{Binding OpenResultCommand}" CommandParameter="0"></KeyBinding>
-        <KeyBinding Key="D2" Modifiers="Alt" Command="{Binding OpenResultCommand}" CommandParameter="1"></KeyBinding>
-        <KeyBinding Key="D3" Modifiers="Alt" Command="{Binding OpenResultCommand}" CommandParameter="2"></KeyBinding>
-        <KeyBinding Key="D4" Modifiers="Alt" Command="{Binding OpenResultCommand}" CommandParameter="3"></KeyBinding>
-        <KeyBinding Key="D5" Modifiers="Alt" Command="{Binding OpenResultCommand}" CommandParameter="4"></KeyBinding>
-        <KeyBinding Key="D6" Modifiers="Alt" Command="{Binding OpenResultCommand}" CommandParameter="5"></KeyBinding>
-        <KeyBinding Key="D7" Modifiers="Alt" Command="{Binding OpenResultCommand}" CommandParameter="6"></KeyBinding>
-        <KeyBinding Key="D8" Modifiers="Alt" Command="{Binding OpenResultCommand}" CommandParameter="7"></KeyBinding>
-        <KeyBinding Key="D9" Modifiers="Alt" Command="{Binding OpenResultCommand}" CommandParameter="8"></KeyBinding>
+        <KeyBinding Key="Enter" Command="{Binding OpenResultCommandDelayed}"></KeyBinding>
+        <KeyBinding Key="Enter" Modifiers="Ctrl" Command="{Binding OpenResultCommandDelayed}"></KeyBinding>
+        <KeyBinding Key="Enter" Modifiers="Alt" Command="{Binding OpenResultCommandDelayed}"></KeyBinding>
+        <KeyBinding Key="D1" Modifiers="Alt" Command="{Binding OpenResultCommandDelayed}" CommandParameter="0"></KeyBinding>
+        <KeyBinding Key="D2" Modifiers="Alt" Command="{Binding OpenResultCommandDelayed}" CommandParameter="1"></KeyBinding>
+        <KeyBinding Key="D3" Modifiers="Alt" Command="{Binding OpenResultCommandDelayed}" CommandParameter="2"></KeyBinding>
+        <KeyBinding Key="D4" Modifiers="Alt" Command="{Binding OpenResultCommandDelayed}" CommandParameter="3"></KeyBinding>
+        <KeyBinding Key="D5" Modifiers="Alt" Command="{Binding OpenResultCommandDelayed}" CommandParameter="4"></KeyBinding>
+        <KeyBinding Key="D6" Modifiers="Alt" Command="{Binding OpenResultCommandDelayed}" CommandParameter="5"></KeyBinding>
+        <KeyBinding Key="D7" Modifiers="Alt" Command="{Binding OpenResultCommandDelayed}" CommandParameter="6"></KeyBinding>
+        <KeyBinding Key="D8" Modifiers="Alt" Command="{Binding OpenResultCommandDelayed}" CommandParameter="7"></KeyBinding>
+        <KeyBinding Key="D9" Modifiers="Alt" Command="{Binding OpenResultCommandDelayed}" CommandParameter="8"></KeyBinding>
     </Window.InputBindings>
     <Border Style="{DynamicResource WindowBorderStyle}" MouseDown="OnMouseDown" >
         <StackPanel Orientation="Vertical">

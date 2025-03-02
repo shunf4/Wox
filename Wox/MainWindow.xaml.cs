@@ -315,6 +315,21 @@ namespace Wox
                 _viewModel.SelectPrevPageCommand.Execute(null);
                 e.Handled = true;
             }
+            else if (e.Key == Key.Apps)
+            {
+                // handled in OnKeyUp
+                //_viewModel.LoadContextMenuCommand.Execute(null);
+                e.Handled = true;
+            }
+        }
+
+        private void OnKeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Apps)
+            {
+                _viewModel.LoadContextMenuCommand.Execute(null);
+                e.Handled = true;
+            }
         }
 
         private void OnTextChanged(object sender, TextChangedEventArgs e)

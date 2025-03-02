@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Input;
 using NLog;
 using Wox.Infrastructure.Logger;
 using Wox.Infrastructure.UserSettings;
@@ -27,6 +28,11 @@ namespace Wox.ViewModel
         private int MaxResults => _settings?.MaxResultsToShow ?? 6;
         private readonly object _collectionLock = new object();
 
+        public object DelayedOpenResultCommandInvocationAndOngoingQueryLock = new object();
+        public Tuple<ICommand, object> DelayedOpenResultCommandInvocation = null;
+
+        public bool hasOngoingQuery = false;
+
         public ResultsViewModel()
         {
             Results = new ResultCollection();
@@ -42,15 +48,49 @@ namespace Wox.ViewModel
             //        // SelectedItem = null;
             //    }));
             //};
-            Results.CollectionChangedPost += (token) =>
+
+            Results.CollectionChangedPost += (token, currQueryEnded) =>
             {
-                // Select the first item, after list changed
-                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                // Select the first item, after query ended
+                if (currQueryEnded)
                 {
-                    SelectedIndex = 0;
-                }));
+                    Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        SelectedIndex = 0;
+                    }));
+                }
+
+                Tuple<ICommand, object> delayedOpenResultCommandInvocationToExecute = null;
+                lock (DelayedOpenResultCommandInvocationAndOngoingQueryLock)
+                {
+                    if (hasOngoingQuery && currQueryEnded)
+                    {
+                        hasOngoingQuery = false;
+                        if (DelayedOpenResultCommandInvocation != null)
+                        {
+                            delayedOpenResultCommandInvocationToExecute = DelayedOpenResultCommandInvocation;
+                            DelayedOpenResultCommandInvocation = null;
+                        }
+                    }
+                }
+                if (delayedOpenResultCommandInvocationToExecute != null)
+                {
+                    Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        delayedOpenResultCommandInvocationToExecute.Item1.Execute(delayedOpenResultCommandInvocationToExecute.Item2);
+                    }));
+                }
             };
         }
+
+        public void SetHasOngoingQuery()
+        {
+            lock (DelayedOpenResultCommandInvocationAndOngoingQueryLock)
+            {
+                hasOngoingQuery = true;
+            }
+        }
+
 
         public ResultsViewModel(Settings settings) : this()
         {
@@ -66,6 +106,10 @@ namespace Wox.ViewModel
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
+        public Func<double> LastCompletedQueryListBoxHeightGetter = null;
+
+        public Action LastCompletedQueryListBoxHeightCacheRequester = null;
+
         #endregion
 
         #region Properties
@@ -79,7 +123,12 @@ namespace Wox.ViewModel
         }
 
         public ResultViewModel SelectedItem { get; set; }
-        public Thickness Margin { get; set; }
+
+        private Thickness _margin;
+        public Thickness Margin {
+            get { return _margin; }
+            set { _margin = value; Logger.WoxInfo($"Margin set to: {Margin}"); }
+        }
         public Visibility Visbility { get; set; } = Visibility.Collapsed;
 
         #endregion
@@ -170,13 +219,13 @@ namespace Wox.ViewModel
             {
                 new ResultsForUpdate(newRawResults, resultId, token)
             };
-            AddResults(updates);
+            AddResults(updates, true);
         }
 
         /// <summary>
         /// To avoid deadlock, this method should not called from main thread
         /// </summary>
-        public void AddResults(List<ResultsForUpdate> updates)
+        public void AddResults(List<ResultsForUpdate> updates, Nullable<bool> overwriteQueryEnded)
         {
             var updatesNotCanceled = updates.Where(u => !u.Token.IsCancellationRequested);
 
@@ -192,23 +241,79 @@ namespace Wox.ViewModel
                 return;
             }
 
+            bool queryEnded = updatesNotCanceled.Select(u => (!u.Token.IsCancellationRequested) && u.Countdown != null && u.Countdown.IsSet).Aggregate(false, (localQueryEnded, x) => localQueryEnded || x);
+            if (overwriteQueryEnded.HasValue)
+            {
+                queryEnded = overwriteQueryEnded.Value;
+            }
+            bool shouldRefreshQueryResultsView;
+            shouldRefreshQueryResultsView = queryEnded;
+            shouldRefreshQueryResultsView = shouldRefreshQueryResultsView || true;
+
+            List<ResultViewModel> newResults = null;
+
+            newResults = NewResults(updatesNotCanceled.ToList(), token);
+            Logger.WoxTrace($"newResults {newResults.Count}");
+
+            Action beforeUpdateAdjustMargin = () =>
+            {
+                if (newResults.Count > 0 && shouldRefreshQueryResultsView)
+                {
+                    Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        if (LastCompletedQueryListBoxHeightCacheRequester != null)
+                        {
+                            LastCompletedQueryListBoxHeightCacheRequester.Invoke();
+                        }
+                    }));
+                    //Margin = new Thickness { Top = 8 };
+                }
+                else if (!shouldRefreshQueryResultsView)
+                {
+                    double x = LastCompletedQueryListBoxHeightGetter.Invoke();
+                    Logger.WoxInfo($"LastCompletedQueryListBoxHeightGetter.Invoke(): {x}");
+                    Margin = new Thickness { Top = x };
+                }
+                else
+                {
+                    //Margin = new Thickness { Top = 0 };
+                }
+                // Application.Current.MainWindow.UpdateLayout();
+            };
+
+            Action afterUpdateAdjustMargin = () =>
+            {
+                if (newResults.Count > 0 && shouldRefreshQueryResultsView)
+                {
+                    Margin = new Thickness { Top = 8 };
+                }
+                else if (!shouldRefreshQueryResultsView)
+                {
+                    //double x = LastCompletedQueryListBoxHeightGetter.Invoke();
+                    //Logger.WoxInfo($"LastCompletedQueryListBoxHeightGetter.Invoke(): {x}");
+                    //Margin = new Thickness { Top = x };
+                }
+                else
+                {
+                    Margin = new Thickness { Top = 0 };
+                }
+            };
+
+            Application.Current.Dispatcher.Invoke(beforeUpdateAdjustMargin);
 
             // https://stackoverflow.com/questions/14336750
             lock (_collectionLock)
             {
-                List<ResultViewModel> newResults = NewResults(updatesNotCanceled.ToList(), token);
-                Logger.WoxTrace($"newResults {newResults.Count}");
-                Results.Update(newResults, token);
+                if (shouldRefreshQueryResultsView)
+                {
+                    Results.Update(newResults, token, afterUpdateAdjustMargin, queryEnded);
+                } else
+                {
+                    Results.Update(new List<ResultViewModel>(), token, afterUpdateAdjustMargin, queryEnded);
+                }
+
             }
 
-            if (Results.Count > 0)
-            {
-                Margin = new Thickness { Top = 8 };
-            }
-            else
-            {
-                Margin = new Thickness { Top = 0 };
-            }
         }
 
         private List<ResultViewModel> NewResults(List<ResultsForUpdate> updates, CancellationToken token)
@@ -272,7 +377,7 @@ namespace Wox.ViewModel
         #endregion
 
         public delegate void NotifyCollectionChangedPreEventHandler(CancellationToken token);
-        public delegate void NotifyCollectionChangedPostEventHandler(CancellationToken token);
+        public delegate void NotifyCollectionChangedPostEventHandler(CancellationToken token, bool queryEnded);
         public class ResultCollection : Collection<ResultViewModel>, INotifyCollectionChanged
         {
             public event NotifyCollectionChangedPreEventHandler CollectionChangedPre;
@@ -288,7 +393,7 @@ namespace Wox.ViewModel
                 }
             }
 
-            public void Update(List<ResultViewModel> newItems, CancellationToken token)
+            public void Update(List<ResultViewModel> newItems, CancellationToken token, Action afterUpdate, bool queryEnded)
             {
                 if (token.IsCancellationRequested) { return; }
 
@@ -314,9 +419,10 @@ namespace Wox.ViewModel
                             // invoked _after_ CollectionChanged (and its consequences)
                             Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                             {
-                                CollectionChangedPost.Invoke(token);
+                                CollectionChangedPost.Invoke(token, queryEnded);
                             }));
                         }
+                        afterUpdate.Invoke();
                     }));
                 }
             }

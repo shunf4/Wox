@@ -170,6 +170,14 @@ namespace Wox.ViewModel
             }
         }
 
+        public List<string> EnterKeyBehaviousWhenQuerying_List
+        {
+            get
+            {
+                return new List<string> {"Immediate", "Delayed", "DoNothing"};
+            }
+        }
+
         private Internationalization _translater => InternationalizationManager.Instance;
         public List<Language> Languages => _translater.LoadAvailableLanguages();
         public IEnumerable<int> MaxResultsRange => Enumerable.Range(2, 16);

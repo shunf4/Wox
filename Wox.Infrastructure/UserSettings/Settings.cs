@@ -79,6 +79,8 @@ namespace Wox.Infrastructure.UserSettings
             }
         }
 
+        public string EnterKeyBehaviousWhenQuerying { get; set; } = "Delayed";
+
         public bool AutoUpdates { get; set; } = true;
         public bool UpdateToPrereleases { get; set; } = false;
 

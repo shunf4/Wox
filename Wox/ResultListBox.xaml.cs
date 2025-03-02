@@ -1,7 +1,10 @@
-﻿using System.Runtime.Remoting.Contexts;
+﻿using NLog;
+using System.Runtime.Remoting.Contexts;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Wox.ViewModel;
 
 namespace Wox
 {
@@ -10,8 +13,48 @@ namespace Wox
     {
         private Point _lastpos;
         private ListBoxItem curItem = null;
+        private bool _shouldNextTimeCacheLastCompletedQueryListBoxHeight = false;
+        private double _savedLastCompletedQueryListBoxHeight = 0;
+        private ManualResetEvent sizeChangedMRE = new ManualResetEvent(false);
+
         public ResultListBox()
         {
+            Loaded += new RoutedEventHandler((sender, e) =>
+            {
+                
+                if (this.DataContext == null || !(this.DataContext is ResultsViewModel)) {
+                    return;
+                }
+                ResultsViewModel vm = ((ResultsViewModel)this.DataContext);
+                vm.LastCompletedQueryListBoxHeightCacheRequester = () =>
+                {
+                    lock (this)
+                    {
+                        _shouldNextTimeCacheLastCompletedQueryListBoxHeight = true;
+                    }
+                };
+                vm.LastCompletedQueryListBoxHeightGetter = () =>
+                {
+                    return this._savedLastCompletedQueryListBoxHeight;
+                };
+                Infrastructure.Logger.Log.WoxInfo(LogManager.GetCurrentClassLogger(), "ListBoxHeightGetter Set");
+            });
+            SizeChanged += (sender, e) =>
+            {
+                bool shouldCacheLastCompletedQueryListBoxHeightRequested = false;
+                lock (this) {
+                    if (_shouldNextTimeCacheLastCompletedQueryListBoxHeight)
+                    {
+                        shouldCacheLastCompletedQueryListBoxHeightRequested = true;
+                        _shouldNextTimeCacheLastCompletedQueryListBoxHeight = false;
+                        
+                    }
+                }
+                if (shouldCacheLastCompletedQueryListBoxHeightRequested)
+                {
+                    _savedLastCompletedQueryListBoxHeight = this.ActualHeight;
+                }
+            };
             InitializeComponent();
         }
 

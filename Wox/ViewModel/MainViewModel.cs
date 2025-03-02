@@ -119,15 +119,17 @@ namespace Wox.ViewModel
                         }
                     }
 
-                    UpdateResultView(updates);
-
-                    DateTime currentTime = DateTime.Now;
-                    Logger.WoxTrace($"start {startTime.Millisecond} end {currentTime.Millisecond}");
+                    
                     foreach (var update in updates)
                     {
                         Logger.WoxTrace($"update name:{update.Metadata.Name} count:{update.Results.Count} query:{update.Query} token:{update.Token.IsCancellationRequested}");
                         update.Countdown.Signal();
                     }
+
+                    UpdateResultView(updates);
+
+                    DateTime currentTime = DateTime.Now;
+                    Logger.WoxTrace($"start {startTime.Millisecond} end {currentTime.Millisecond}");
                     DateTime viewExpired = startTime.AddMilliseconds(timeout);
                     if (currentTime < viewExpired)
                     {
@@ -206,6 +208,45 @@ namespace Wox.ViewModel
             });
 
             RefreshCommand = new RelayCommand(_ => Refresh());
+
+            OpenResultCommandDelayed = new RelayCommand(index =>
+            {
+                var results = SelectedResults;
+                bool shouldExecuteImmediately;
+                string behaviour = Settings.Instance.EnterKeyBehaviousWhenQuerying;
+                if (behaviour == null)
+                {
+                    behaviour = "Delayed";
+                } else if (!behaviour.Equals("Delayed") && !behaviour.Equals("Immediate"))
+                {
+                    behaviour = "DoNothing";
+                }
+                lock (results.DelayedOpenResultCommandInvocationAndOngoingQueryLock)
+                {
+                    if (results.hasOngoingQuery)
+                    {
+                        if (behaviour.Equals("Delayed"))
+                        {
+                            results.DelayedOpenResultCommandInvocation = Tuple.Create(OpenResultCommand, index);
+                            shouldExecuteImmediately = false;
+                        }
+                        else if (behaviour.Equals("Immediate"))
+                        {
+                            shouldExecuteImmediately = true;
+                        } else
+                        {
+                            shouldExecuteImmediately = false;
+                        }
+                    } else
+                    {
+                        shouldExecuteImmediately = true;
+                    }
+                }
+                if (shouldExecuteImmediately)
+                {
+                    OpenResultCommand.Execute(index);
+                }
+            });
 
             OpenResultCommand = new RelayCommand(index =>
             {
@@ -355,12 +396,17 @@ namespace Wox.ViewModel
         public ICommand RefreshCommand { get; set; }
         public ICommand LoadContextMenuCommand { get; set; }
         public ICommand LoadHistoryCommand { get; set; }
+        public ICommand OpenResultCommandDelayed { get; set; }
         public ICommand OpenResultCommand { get; set; }
 
         #endregion
 
         public void Query()
         {
+            if (SelectedResults != null)
+            {
+                SelectedResults.SetHasOngoingQuery();
+            }
             if (SelectedIsFromQueryResults())
             {
                 QueryResults();
@@ -459,6 +505,21 @@ namespace Wox.ViewModel
         {
             CancellationTokenSource source;
             CancellationToken token;
+
+            string behaviour = Settings.Instance.EnterKeyBehaviousWhenQuerying;
+            if (behaviour == null)
+            {
+                behaviour = "Delayed";
+            }
+            else if (!behaviour.Equals("Delayed") && !behaviour.Equals("Immediate"))
+            {
+                behaviour = "DoNothing";
+            }
+            if (!behaviour.Equals("Immediate"))
+            {
+                Results.SelectedIndex = -1;
+            }
+
             lock (this)
             {
                 if (_updateSource != null && !_updateSource.IsCancellationRequested)
@@ -831,7 +892,7 @@ namespace Wox.ViewModel
                 }
             }
             
-            Results.AddResults(updates);
+            Results.AddResults(updates, null);
 
             if (Results.Visbility != Visibility.Visible && Results.Count > 0)
             {

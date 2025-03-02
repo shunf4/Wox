@@ -94,7 +94,7 @@ namespace Wox.Plugin.Program
 
                 _updateSource = new CancellationTokenSource();
             }
-            
+
             var token = _updateSource.Token;
             StringMatcher sm = new StringMatcher(token);
             try
@@ -147,31 +147,39 @@ namespace Wox.Plugin.Program
                 OrderedParallelQuery<Result> sorted = null;
                 List<Result> results = new List<Result>();
 
-                sorted = resultRaw.AsParallel().WithCancellation(token).OrderByDescending(r => r.Score);
+                sorted = resultRaw.AsParallel().WithCancellation(token).OrderByDescending(r => r.Score).ThenBy(r => r.Title).ThenBy(r => r.SubTitle);
 
                 if (token.IsCancellationRequested) { return new List<Result>(); }
+
+                int lastScore = -1;
 
                 foreach (Result r in sorted)
                 {
                     if (token.IsCancellationRequested) { return new List<Result>(); }
-                    var ignored = _settings.IgnoredSequence.Any(entry =>
-                    {
-                        if (entry.IsRegex)
-                        {
-                            return Regex.Match(r.Title, entry.EntryString).Success || Regex.Match(r.SubTitle, entry.EntryString).Success;
-                        }
-                        else
-                        {
-                            return r.Title.ToLower().Contains(entry.EntryString) || r.SubTitle.ToLower().Contains(entry.EntryString);
-                        }
-                    });
-                    if (!ignored)
-                    {
-                        results.Add(r);
-                    }
-                    if (results.Count == 30)
+                    
+                    // Make sure all items that have the same score are all returned,
+                    // preventing the variating effect of randomness across each time of query.
+                    if (results.Count >= 30 && lastScore != r.Score)
                     {
                         break;
+                    } else
+                    {
+                        var ignored = _settings.IgnoredSequence.Any(entry =>
+                        {
+                            if (entry.IsRegex)
+                            {
+                                return Regex.Match(r.Title, entry.EntryString).Success || Regex.Match(r.SubTitle, entry.EntryString).Success;
+                            }
+                            else
+                            {
+                                return r.Title.ToLower().Contains(entry.EntryString) || r.SubTitle.ToLower().Contains(entry.EntryString);
+                            }
+                        });
+                        if (!ignored)
+                        {
+                            results.Add(r);
+                        }
+                        lastScore = r.Score;
                     }
                 }
 
