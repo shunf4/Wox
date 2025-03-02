@@ -540,7 +540,7 @@ namespace Wox.ViewModel
             var queryText = QueryText.Trim();
             Task.Run(() =>
             {
-                Thread.Sleep(20);
+                //Thread.Sleep(20);
                 if (!string.IsNullOrEmpty(queryText))
                 {
                     if (token.IsCancellationRequested) { return; }

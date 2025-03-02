@@ -473,7 +473,8 @@ namespace Wox.Plugin.Shell
             // Sometimes may fail to bring to foreground
             Application.Current.Dispatcher.BeginInvoke(new Action(() =>
             {
-                _context.API.ChangeQuery($"{_context.CurrentPluginMetadata.ActionKeywords[0]}{Plugin.Query.TermSeperater}");
+                //_context.API.ChangeQuery($"{_context.CurrentPluginMetadata.ActionKeywords[0]}{Plugin.Query.TermSeperater}");
+                _context.API.ChangeQuery($"{_context.CurrentPluginMetadata.ActionKeywords[0]}");
                 _context.API.ShowApp();
             }));
             Task.Delay(10).ContinueWith(t => {
