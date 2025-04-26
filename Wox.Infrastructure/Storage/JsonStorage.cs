@@ -84,21 +84,33 @@ namespace Wox.Infrastructure.Storage
             Save();
         }
 
-        private void BackupOriginFile()
+        private string BackupOriginFile(String extraNamePart = "")
         {
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss-fffffff", CultureInfo.CurrentUICulture);
             var directory = Path.GetDirectoryName(FilePath).NonNull();
             var originName = Path.GetFileNameWithoutExtension(FilePath);
-            var backupName = $"{originName}-{timestamp}{FileSuffix}";
+            var backupName = $"{originName}{extraNamePart}-{timestamp}{FileSuffix}";
             var backupPath = Path.Combine(directory, backupName);
             File.Copy(FilePath, backupPath, true);
+            return backupPath;
             // todo give user notification for the backup process
         }
 
         public void Save()
         {
             string serialized = JsonConvert.SerializeObject(_data, Formatting.Indented);
-            File.WriteAllText(FilePath, serialized);
+            //File.WriteAllText(FilePath, serialized);
+
+            string backupPath = BackupOriginFile("-tmp");
+
+            // https://stackoverflow.com/questions/54078564/file-containing-null-values-instead-of-json-object-after-computer-restart
+            using (Stream stream = File.Create(FilePath, 64 * 1024, FileOptions.WriteThrough))
+            using (TextWriter textWriter = new StreamWriter(stream))
+            {
+                textWriter.Write(serialized);
+            }
+
+            File.Delete(backupPath);
         }
     }
 }
