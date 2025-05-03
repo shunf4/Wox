@@ -150,6 +150,49 @@ namespace Wox.Plugin.Program.Programs
             }
         }
 
+        // https://stackoverflow.com/questions/5098011/directory-enumeratefiles-unauthorizedaccessexception
+        public static class SafeWalk
+        {
+            public static IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOpt)
+            {
+                try
+                {
+                    var dirFiles = Enumerable.Empty<string>();
+                    if (searchOpt == SearchOption.AllDirectories)
+                    {
+                        dirFiles = Directory.EnumerateDirectories(path)
+                                            .SelectMany(x => EnumerateFiles(x, searchPattern, searchOpt));
+                    }
+                    return dirFiles.Concat(Directory.EnumerateFiles(path, searchPattern));
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    Logger.WoxError(ex.ToString());
+                    Logger.WoxError($"SafeWalk.EnumerateFiles denied {path}");
+                    return Enumerable.Empty<string>();
+                }
+            }
+            public static IEnumerable<string> EnumerateDirectories(string path, string searchPattern, SearchOption searchOpt)
+            {
+                try
+                {
+                    var dirFiles = Enumerable.Empty<string>();
+                    if (searchOpt == SearchOption.AllDirectories)
+                    {
+                        dirFiles = Directory.EnumerateDirectories(path)
+                                            .SelectMany(x => EnumerateDirectories(x, searchPattern, searchOpt));
+                    }
+                    return dirFiles.Concat(Directory.EnumerateDirectories(path, searchPattern));
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    Logger.WoxError(ex.ToString());
+                    Logger.WoxError($"SafeWalk.EnumerateDirectories denied {path}");
+                    return Enumerable.Empty<string>();
+                }
+            }
+        }
+
         private static IEnumerable<string> ProgramPaths(string directory, SearchOption searchOption, HashSet<string> suffixesToLower, bool shouldShowDirAsEntry)
         {
             if (!Directory.Exists(directory))
@@ -157,7 +200,7 @@ namespace Wox.Plugin.Program.Programs
             var paths = new List<string>();
             try
             {
-                IEnumerable<string> files = Directory.EnumerateFiles(directory, "*", searchOption);
+                IEnumerable<string> files = SafeWalk.EnumerateFiles(directory, "*", searchOption);
                 foreach (var path in files)
                 {
                     if (path.Contains("\\node_modules") || path.Contains("\\.git\\") || path.Contains("\\site-packages\\") || path.Contains("\\VENV\\"))
@@ -176,7 +219,7 @@ namespace Wox.Plugin.Program.Programs
 
                 if (shouldShowDirAsEntry)
                 {
-                    IEnumerable<string> dirs = Directory.EnumerateDirectories(directory, "*", searchOption);
+                    IEnumerable<string> dirs = SafeWalk.EnumerateDirectories(directory, "*", searchOption);
                     foreach (var path in dirs)
                     {
                         if (path.Contains("\\node_modules") || path.Contains("\\.git\\") || path.Contains("\\site-packages\\") || path.Contains("\\VENV\\"))
@@ -193,6 +236,7 @@ namespace Wox.Plugin.Program.Programs
             }
             catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
             {
+                Logger.WoxError(e.ToString());
                 Logger.WoxError($"Permission denied {directory}");
             }
             catch (DirectoryNotFoundException)
