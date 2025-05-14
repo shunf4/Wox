@@ -39,13 +39,17 @@ namespace Wox.Plugin.Program.Programs
                 ContextData = this,
                 Action = e =>
                 {
+                    // ProcessStartInfo.UseShellExecute does not work  https://textslashplain.com/2018/10/11/shellexecute-doesnt/
                     var info = new ProcessStartInfo
                     {
-                        FileName = FullPath,
-                        WorkingDirectory = ParentDirectory
+                        FileName = "explorer",
+                        Arguments = FullPath,
+                        WorkingDirectory = ParentDirectory,
+                        //UseShellExecute = true
                     };
 
                     if (e.SpecialKeyState.CtrlPressed)
+                        // However, runas process is run in isolated, up-to-date environment
                         Main.StartProcess(Process.Start, ShellCommand.SetProcessStartInfo(info.FileName, info.WorkingDirectory, "", "runas"));
                     else
                         Main.StartProcess(Process.Start, info);
