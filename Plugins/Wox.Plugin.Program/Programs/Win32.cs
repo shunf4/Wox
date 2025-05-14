@@ -305,8 +305,8 @@ namespace Wox.Plugin.Program.Programs
             var directory2 = Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms);
             directory2 = Directory.GetParent(directory2).FullName;
             var suffixesLowerSet = new HashSet<string>(suffixes.Select(s => s.ToLower()));
-            var paths1 = ProgramPaths(directory1, SearchOption.AllDirectories, suffixesLowerSet, false);
-            var paths2 = ProgramPaths(directory2, SearchOption.AllDirectories, suffixesLowerSet, false);
+            var paths1 = ProgramPaths(directory1, SearchOption.AllDirectories, suffixesLowerSet, true);
+            var paths2 = ProgramPaths(directory2, SearchOption.AllDirectories, suffixesLowerSet, true);
             var paths = paths1.Concat(paths2);
 
             var programs = paths.AsParallel().Select(Win32Program);
