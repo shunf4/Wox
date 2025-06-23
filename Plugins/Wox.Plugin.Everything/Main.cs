@@ -143,19 +143,10 @@ namespace Wox.Plugin.Everything
 
 
 
-        private List<ContextMenu> GetDefaultContextMenu()
+        private List<ContextMenu> GetDefaultContextMenuForFile()
         {
             List<ContextMenu> defaultContextMenus = new List<ContextMenu>();
-            ContextMenu openFolderContextMenu = new ContextMenu
-            {
-                Name = _context.API.GetTranslation("wox_plugin_everything_open_containing_folder"),
-                Command = "explorer.exe",
-                Argument = " /select,\"{path}\"",
-                ImagePath = "Images\\folder.png"
-            };
-
-            defaultContextMenus.Add(openFolderContextMenu);
-
+            
             string editorPath = string.IsNullOrEmpty(_settings.EditorPath) ? "notepad.exe" : _settings.EditorPath;
 
             ContextMenu openWithEditorContextMenu = new ContextMenu
@@ -167,6 +158,22 @@ namespace Wox.Plugin.Everything
             };
 
             defaultContextMenus.Add(openWithEditorContextMenu);
+
+            return defaultContextMenus;
+        }
+
+        private List<ContextMenu> GetDefaultContextMenuForFileOrFolder()
+        {
+            List<ContextMenu> defaultContextMenus = new List<ContextMenu>();
+            ContextMenu openFolderContextMenu = new ContextMenu
+            {
+                Name = _context.API.GetTranslation("wox_plugin_everything_open_containing_folder"),
+                Command = "explorer.exe",
+                Argument = " /select,\"{path}\"",
+                ImagePath = "Images\\folder.png"
+            };
+
+            defaultContextMenus.Add(openFolderContextMenu);
 
             return defaultContextMenus;
         }
@@ -220,34 +227,35 @@ namespace Wox.Plugin.Everything
             if (record == null) return contextMenus;
 
             List<ContextMenu> availableContextMenus = new List<ContextMenu>();
-            availableContextMenus.AddRange(GetDefaultContextMenu());
+            availableContextMenus.AddRange(GetDefaultContextMenuForFileOrFolder());
             availableContextMenus.AddRange(_settings.ContextMenus);
 
             if (record.Type == ResultType.File)
             {
-                foreach (ContextMenu contextMenu in availableContextMenus)
+                availableContextMenus.AddRange(GetDefaultContextMenuForFile());
+            }
+            foreach (ContextMenu contextMenu in availableContextMenus)
+            {
+                var menu = contextMenu;
+                contextMenus.Add(new Result
                 {
-                    var menu = contextMenu;
-                    contextMenus.Add(new Result
+                    Title = contextMenu.Name,
+                    Action = _ =>
                     {
-                        Title = contextMenu.Name,
-                        Action = _ =>
+                        string argument = menu.Argument.Replace("{path}", record.FullPath);
+                        try
                         {
-                            string argument = menu.Argument.Replace("{path}", record.FullPath);
-                            try
-                            {
-                                Process.Start(menu.Command, argument);
-                            }
-                            catch
-                            {
-                                _context.API.ShowMsg(string.Format(_context.API.GetTranslation("wox_plugin_everything_canot_start"), record.FullPath), string.Empty, string.Empty);
-                                return false;
-                            }
-                            return true;
-                        },
-                        IcoPath = contextMenu.ImagePath
-                    });
-                }
+                            Process.Start(menu.Command, argument);
+                        }
+                        catch
+                        {
+                            _context.API.ShowMsg(string.Format(_context.API.GetTranslation("wox_plugin_everything_canot_start"), record.FullPath), string.Empty, string.Empty);
+                            return false;
+                        }
+                        return true;
+                    },
+                    IcoPath = contextMenu.ImagePath
+                });
             }
 
             var icoPath = (record.Type == ResultType.File) ? "Images\\file.png" : "Images\\folder.png";

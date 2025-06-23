@@ -121,5 +121,21 @@ namespace Wox.Infrastructure
                 MessageBox.Show(message);
             }
         }
+
+        // https://stackoverflow.com/questions/13680415/how-to-open-explorer-with-a-specific-file-selected/13680458#13680458
+        public static bool OpenDirInExporerSelectFile(string filePath)
+        {
+            if (!System.IO.File.Exists(filePath))
+            {
+                string message = $"Unable to open location { (object)filePath}, please check if it exists";
+                Logger.WoxError(message);
+                MessageBox.Show(message);
+                return false;
+            }
+            //Clean up file path so it can be navigated OK
+            filePath = System.IO.Path.GetFullPath(filePath);
+            System.Diagnostics.Process.Start("explorer.exe", string.Format("/select,\"{0}\"", filePath));
+            return true;
+        }
     }
 }

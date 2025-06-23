@@ -107,7 +107,8 @@ namespace Wox.Plugin.Program.Programs
                     Title = api.GetTranslation("wox_plugin_program_open_containing_folder"),
                     Action = _ =>
                     {
-                        Main.StartProcess(Process.Start, new ProcessStartInfo(ParentDirectory));
+                        //Main.StartProcess(Process.Start, new ProcessStartInfo(ParentDirectory));
+                        FilesFolders.OpenDirInExporerSelectFile(FullPath);
 
                         return true;
                     },
@@ -157,15 +158,19 @@ namespace Wox.Plugin.Program.Programs
         // https://stackoverflow.com/questions/5098011/directory-enumeratefiles-unauthorizedaccessexception
         public static class SafeWalk
         {
-            public static IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOpt)
+            public static IEnumerable<string> EnumerateFiles(int? remainingDepth, string path, string searchPattern, SearchOption searchOpt)
             {
+                if (remainingDepth != null && remainingDepth <= 0)
+                {
+                    return Enumerable.Empty<string>();
+                }
                 try
                 {
                     var dirFiles = Enumerable.Empty<string>();
                     if (searchOpt == SearchOption.AllDirectories)
                     {
                         dirFiles = Directory.EnumerateDirectories(path)
-                                            .SelectMany(x => EnumerateFiles(x, searchPattern, searchOpt));
+                                            .SelectMany(x => EnumerateFiles(remainingDepth == null ? null : (remainingDepth - 1), x, searchPattern, searchOpt));
                     }
                     return dirFiles.Concat(Directory.EnumerateFiles(path, searchPattern));
                 }
@@ -176,15 +181,19 @@ namespace Wox.Plugin.Program.Programs
                     return Enumerable.Empty<string>();
                 }
             }
-            public static IEnumerable<string> EnumerateDirectories(string path, string searchPattern, SearchOption searchOpt)
+            public static IEnumerable<string> EnumerateDirectories(int? remainingDepth, string path, string searchPattern, SearchOption searchOpt)
             {
+                if (remainingDepth != null && remainingDepth <= 0)
+                {
+                    return Enumerable.Empty<string>();
+                }
                 try
                 {
                     var dirFiles = Enumerable.Empty<string>();
                     if (searchOpt == SearchOption.AllDirectories)
                     {
                         dirFiles = Directory.EnumerateDirectories(path)
-                                            .SelectMany(x => EnumerateDirectories(x, searchPattern, searchOpt));
+                                            .SelectMany(x => EnumerateDirectories(remainingDepth == null ? null : (remainingDepth - 1), x, searchPattern, searchOpt));
                     }
                     return dirFiles.Concat(Directory.EnumerateDirectories(path, searchPattern));
                 }
@@ -197,17 +206,17 @@ namespace Wox.Plugin.Program.Programs
             }
         }
 
-        private static IEnumerable<string> ProgramPaths(string directory, SearchOption searchOption, HashSet<string> suffixesToLower, bool shouldShowDirAsEntry)
+        private static IEnumerable<string> ProgramPaths(string directory, int? searchDepthLimitOptional, SearchOption searchOption, HashSet<string> suffixesToLower, bool shouldShowDirAsEntry)
         {
             if (!Directory.Exists(directory))
                 return new string[] { };
             var paths = new List<string>();
             try
             {
-                IEnumerable<string> files = SafeWalk.EnumerateFiles(directory, "*", searchOption);
+                IEnumerable<string> files = SafeWalk.EnumerateFiles(searchDepthLimitOptional, directory, "*", searchOption);
                 foreach (var path in files)
                 {
-                    if (path.Contains("\\node_modules") || path.Contains("\\.git\\") || path.Contains("\\site-packages\\") || path.Contains("\\VENV\\"))
+                    if (path.Contains("\\node_modules") || path.Contains("\\.git\\") || path.Contains("\\.stversions\\") || path.Contains("\\site-packages\\") || path.Contains("\\VENV\\"))
                     {
                         continue;
                     }
@@ -223,14 +232,14 @@ namespace Wox.Plugin.Program.Programs
 
                 if (shouldShowDirAsEntry)
                 {
-                    IEnumerable<string> dirs = SafeWalk.EnumerateDirectories(directory, "*", searchOption);
+                    IEnumerable<string> dirs = SafeWalk.EnumerateDirectories(searchDepthLimitOptional, directory, "*", searchOption);
                     foreach (var path in dirs)
                     {
-                        if (path.Contains("\\node_modules") || path.Contains("\\.git\\") || path.Contains("\\site-packages\\") || path.Contains("\\VENV\\"))
+                        if (path.EndsWith("\\.git") || path.EndsWith("\\site-packages") || path.EndsWith("\\.stversions") || path.EndsWith("\\VENV"))
                         {
                             continue;
                         }
-                        if (path.EndsWith("\\.git") || path.EndsWith("\\site-packages") || path.EndsWith("\\VENV"))
+                        if (path.Contains("\\node_modules") || path.Contains("\\.git\\") || path.Contains("\\.stversions\\") || path.Contains("\\site-packages\\") || path.Contains("\\VENV\\"))
                         {
                             continue;
                         }
@@ -290,9 +299,10 @@ namespace Wox.Plugin.Program.Programs
                                    Location = Environment.ExpandEnvironmentVariables(s.Location),
                                    SearchOption = s.SearchOption,
                                    ShouldShowDirAsEntry = s.ShouldShowDirAsEntry,
+                                   SearchDepthLimitOptional = s.SearchDepthLimitOptional,
                                })
                                .Where(s => Directory.Exists(s.Location))
-                               .SelectMany(s => ProgramPaths(s.Location, s.SearchOption, suffixesLowerSet, s.ShouldShowDirAsEntry));
+                               .SelectMany(s => ProgramPaths(s.Location, s.SearchDepthLimitOptional, s.SearchOption, suffixesLowerSet, s.ShouldShowDirAsEntry));
             var programs = paths.AsParallel().Select(Win32Program);
             return programs;
         }
@@ -305,8 +315,8 @@ namespace Wox.Plugin.Program.Programs
             var directory2 = Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms);
             directory2 = Directory.GetParent(directory2).FullName;
             var suffixesLowerSet = new HashSet<string>(suffixes.Select(s => s.ToLower()));
-            var paths1 = ProgramPaths(directory1, SearchOption.AllDirectories, suffixesLowerSet, true);
-            var paths2 = ProgramPaths(directory2, SearchOption.AllDirectories, suffixesLowerSet, true);
+            var paths1 = ProgramPaths(directory1, null, SearchOption.AllDirectories, suffixesLowerSet, true);
+            var paths2 = ProgramPaths(directory2, null, SearchOption.AllDirectories, suffixesLowerSet, true);
             var paths = paths1.Concat(paths2);
 
             var programs = paths.AsParallel().Select(Win32Program);

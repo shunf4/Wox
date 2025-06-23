@@ -11,6 +11,8 @@ namespace Wox.Plugin.Program
     {
         public string Location { get; set; }
 
+        public int? SearchDepthLimitOptional { get; set; }
+
         public SearchOption SearchOption { get; set; }
 
         public bool ShouldShowDirAsEntry { get; set; } = false;
@@ -27,6 +29,22 @@ namespace Wox.Plugin.Program
                 if (SearchOption == SearchOption.TopDirectoryOnly)
                 {
                     result = "!" + result;
+                } else
+                {
+                    if (SearchDepthLimitOptional != null)
+                    {
+                        if (SearchDepthLimitOptional == 3)
+                        {
+                            result = "!!!" + result;
+                        } else if (SearchDepthLimitOptional == 2)
+                        {
+                            result = "!!" + result;
+                        }
+                        else if (SearchDepthLimitOptional == 1)
+                        {
+                            result = "!" + result;
+                        }
+                    }
                 }
                 return result;
             }
@@ -37,6 +55,7 @@ namespace Wox.Plugin.Program
             t.Location = Location;
             t.SearchOption = SearchOption;
             t.ShouldShowDirAsEntry = ShouldShowDirAsEntry;
+            t.SearchDepthLimitOptional = SearchDepthLimitOptional;
         }
 
         public override bool Equals(object obj)
@@ -44,15 +63,18 @@ namespace Wox.Plugin.Program
             return obj is ProgramSource source &&
                    Location == source.Location &&
                    SearchOption == source.SearchOption &&
-                   ShouldShowDirAsEntry == source.ShouldShowDirAsEntry;
+                   ShouldShowDirAsEntry == source.ShouldShowDirAsEntry &&
+                   SearchDepthLimitOptional == source.SearchDepthLimitOptional;
         }
 
         public override int GetHashCode()
         {
-            int hashCode = -1118069328;
+            int hashCode = -1528328600;
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Location);
+            hashCode = hashCode * -1521134295 + SearchDepthLimitOptional.GetHashCode();
             hashCode = hashCode * -1521134295 + SearchOption.GetHashCode();
             hashCode = hashCode * -1521134295 + ShouldShowDirAsEntry.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(SettingEditSourceCode);
             return hashCode;
         }
     }

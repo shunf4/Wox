@@ -49,6 +49,18 @@ namespace Wox.Plugin.Program
             var result = new ProgramSource();
             result.SearchOption = System.IO.SearchOption.AllDirectories;
             result.ShouldShowDirAsEntry = false;
+            if (directoryText.StartsWith("!!!"))
+            {
+                directoryText = directoryText.Substring(3);
+                result.SearchOption = System.IO.SearchOption.AllDirectories;
+                result.SearchDepthLimitOptional = 3;
+            }
+            if (directoryText.StartsWith("!!"))
+            {
+                directoryText = directoryText.Substring(2);
+                result.SearchOption = System.IO.SearchOption.AllDirectories;
+                result.SearchDepthLimitOptional = 2;
+            }
             if (directoryText.StartsWith("!"))
             {
                 directoryText = directoryText.Substring(1);
