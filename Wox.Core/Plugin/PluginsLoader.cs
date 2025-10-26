@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -31,7 +32,7 @@ namespace Wox.Core.Plugin
 
         public static IEnumerable<PluginPair> CSharpPlugins(List<PluginMetadata> source)
         {
-            var plugins = new List<PluginPair>();
+            var plugins = new ConcurrentBag<PluginPair>();
             var metadatas = source.Where(o => o.Language.ToUpper() == AllowedLanguage.CSharp);
 
             Parallel.ForEach(metadatas, metadata =>
