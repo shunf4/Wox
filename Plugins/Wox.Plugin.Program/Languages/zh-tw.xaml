@@ -17,7 +17,15 @@
     <system:String x:Key="wox_plugin_program_max_depth_header">最大深度</system:String>
 
     <system:String x:Key="wox_plugin_program_directory">目錄</system:String>
-    <system:String x:Key="wox_plugin_program_directory_hint">(Prefix ! prevents searching in subdirectories (depth 1; more ! allows more depth, max 3); prefix * enables listing subdirectories as entry. Can provide both like !!*XXXPath)</system:String>
+    <system:String x:Key="wox_plugin_program_directory_hint">- Can also provide a single file
+- Prefix ! prevents searching in subdirectories (depth 1; more ! allows more depth, max 3)
+- Prefix * enables listing subdirectories as entry
+- Can provide both like !!*XXXPath
+- ::name= overrides name
+- ::desc= adds description
+- ::dirSelf lists dir itself as a single element
+- ::extraExts=ext1,ext2,ext3 adds extra extension in curr dir
+</system:String>
     <system:String x:Key="wox_plugin_program_browse">瀏覽</system:String>
     <system:String x:Key="wox_plugin_program_file_suffixes">副檔名</system:String>
     <system:String x:Key="wox_plugin_program_max_search_depth">最大搜尋深度（-1是無限的）：</system:String>

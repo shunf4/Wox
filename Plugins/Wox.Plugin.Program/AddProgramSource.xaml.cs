@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 
@@ -44,6 +45,8 @@ namespace Wox.Plugin.Program
             }
         }
 
+        private static readonly string[] SOLE_DIR_TEXT_PARAM_SEP = new string[] { "::" };
+
         private ProgramSource parseDirectoryText(string directoryText)
         {
             var result = new ProgramSource();
@@ -70,6 +73,45 @@ namespace Wox.Plugin.Program
             {
                 directoryText = directoryText.Substring(1);
                 result.ShouldShowDirAsEntry = true;
+            }
+            {
+                string[] paramParts = directoryText.Split(SOLE_DIR_TEXT_PARAM_SEP, StringSplitOptions.None);
+                if (paramParts.Length > 1)
+                {
+                    directoryText = paramParts[0];
+                    for (int i = 1; i < paramParts.Length; i++)
+                    {
+                        string param = paramParts[i];
+                        string[] paramInternalParts = param.Split('=');
+                        if (paramInternalParts.Length >= 1)
+                        {
+                            string paramKey = paramInternalParts[0];
+                            string paramVal;
+                            if (paramInternalParts.Length >= 2)
+                            {
+                                paramVal = string.Join("=", paramInternalParts.Skip(1));
+                            } else
+                            {
+                                paramVal = null;
+                            }
+                            if (paramKey == "name" && paramVal != null)
+                            {
+                                result.OverrideName = paramVal;
+                            }
+                            else if (paramKey == "desc" && paramVal != null)
+                            {
+                                result.ExtraDesc = paramVal;
+                            } else if (paramKey == "extraExts" && paramVal != null)
+                            {
+                                result.ExtraExtensionList = result.ExtraExtensionList == null ? new List<string>() : result.ExtraExtensionList;
+                                result.ExtraExtensionList.AddRange(paramVal.Split(','));
+                            } else if (paramKey == "dirSelf")
+                            {
+                                result.IsDirSelf = true;
+                            }
+                        }
+                    }
+                }
             }
             result.Location = directoryText;
             return result;

@@ -125,18 +125,30 @@ namespace Wox.Plugin.Program.Programs
             return ExecutableName;
         }
 
-        private static Win32 Win32Program(string path)
+        private static Win32 Win32Program(ProgramPathElement ppe)
         {
+            var path = ppe.Path;
             try
             {
                 string name;
-                if (path.ToLower().EndsWith(".lnk"))
+                if (ppe.OverrideName != null)
+                {
+                    name = ppe.OverrideName;
+                }
+                else if (path.ToLower().EndsWith(".lnk"))
                 {
                     name = Path.GetFileNameWithoutExtension(path);
                 } else
                 {
                     name = Path.GetFileName(path);
                 }
+
+
+                if (ppe.ExtraDesc != null)
+                {
+                    name += " - " + ppe.ExtraDesc;
+                }
+
                 var p = new Win32
                 {
                     Name = name,
@@ -206,10 +218,39 @@ namespace Wox.Plugin.Program.Programs
             }
         }
 
-        private static IEnumerable<string> ProgramPaths(string directory, int? searchDepthLimitOptional, SearchOption searchOption, HashSet<string> suffixesToLower, bool shouldShowDirAsEntry)
+        private class ProgramPathElement
+        {
+            public string Path { get; set; }
+            public string OverrideName { get; set; }
+            public string ExtraDesc { get; set; }
+
+            public ProgramPathElement(string path, string overrideName, string extraDesc)
+            {
+                Path = path;
+                OverrideName = overrideName;
+                ExtraDesc = extraDesc;
+            }
+        }
+
+            private static IEnumerable<ProgramPathElement> ProgramPaths(string directory, int? searchDepthLimitOptional, SearchOption searchOption, HashSet<string> suffixesToLower, bool shouldShowDirAsEntry, string overrideName, string extraDesc, bool isDirSelf)
         {
             if (!Directory.Exists(directory))
-                return new string[] { };
+            {
+                if (File.Exists(directory))
+                {
+                    // is a file
+                    return new ProgramPathElement[] { new ProgramPathElement(directory, overrideName, extraDesc) };
+                }
+                else
+                {
+                    return new ProgramPathElement[] { };
+                }
+            }
+            if (isDirSelf)
+            {
+                return new ProgramPathElement[] { new ProgramPathElement(directory, overrideName, extraDesc) };
+            }
+            
             var paths = new List<string>();
             try
             {
@@ -257,7 +298,7 @@ namespace Wox.Plugin.Program.Programs
                 Logger.WoxError($"Directory not found {directory}");
             }
 
-            return paths;
+            return paths.AsParallel().Select(p => new ProgramPathElement(p, overrideName, extraDesc));
         }
 
         private static string Extension(string path)
@@ -294,15 +335,23 @@ namespace Wox.Plugin.Program.Programs
             var suffixesLowerSet = new HashSet<string>(suffixes.Select(s => s.ToLower()));
             
             var paths = sources
-                               .Select(s => new ProgramSource()
-                               {
-                                   Location = Environment.ExpandEnvironmentVariables(s.Location),
-                                   SearchOption = s.SearchOption,
-                                   ShouldShowDirAsEntry = s.ShouldShowDirAsEntry,
-                                   SearchDepthLimitOptional = s.SearchDepthLimitOptional,
+                               .Select(s => {
+                                   var newPs = new ProgramSource();
+                                   s.CopyTo(newPs);
+                                   newPs.Location = Environment.ExpandEnvironmentVariables(s.Location);
+                                   return newPs;
                                })
-                               .Where(s => Directory.Exists(s.Location))
-                               .SelectMany(s => ProgramPaths(s.Location, s.SearchDepthLimitOptional, s.SearchOption, suffixesLowerSet, s.ShouldShowDirAsEntry));
+                               .SelectMany(s => {
+                                   HashSet<string> currSourceSuffixesLowerSet;
+                                   if (s.ExtraExtensionList != null)
+                                   {
+                                       currSourceSuffixesLowerSet = new HashSet<string>(suffixesLowerSet.Union(s.ExtraExtensionList.Select(ext => (ext.StartsWith(".") ? ext.Substring(1) : ext).ToLower())));
+                                   } else
+                                   {
+                                       currSourceSuffixesLowerSet = suffixesLowerSet;
+                                   }
+                                   return ProgramPaths(s.Location, s.SearchDepthLimitOptional, s.SearchOption, currSourceSuffixesLowerSet, s.ShouldShowDirAsEntry, s.OverrideName, s.ExtraDesc, s.IsDirSelf);
+                               });
             var programs = paths.AsParallel().Select(Win32Program);
             return programs;
         }
@@ -315,8 +364,8 @@ namespace Wox.Plugin.Program.Programs
             var directory2 = Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms);
             directory2 = Directory.GetParent(directory2).FullName;
             var suffixesLowerSet = new HashSet<string>(suffixes.Select(s => s.ToLower()));
-            var paths1 = ProgramPaths(directory1, null, SearchOption.AllDirectories, suffixesLowerSet, true);
-            var paths2 = ProgramPaths(directory2, null, SearchOption.AllDirectories, suffixesLowerSet, true);
+            var paths1 = ProgramPaths(directory1, null, SearchOption.AllDirectories, suffixesLowerSet, true, null, null, false);
+            var paths2 = ProgramPaths(directory2, null, SearchOption.AllDirectories, suffixesLowerSet, true, null, null, false);
             var paths = paths1.Concat(paths2);
 
             var programs = paths.AsParallel().Select(Win32Program);
@@ -393,7 +442,7 @@ namespace Wox.Plugin.Program.Programs
             if (!File.Exists(path))
                 return new Win32();
 
-            var entry = Win32Program(path);
+            var entry = Win32Program(new ProgramPathElement(path, null, null));
             entry.ExecutableName = Path.GetFileName(path);
 
             return entry;
