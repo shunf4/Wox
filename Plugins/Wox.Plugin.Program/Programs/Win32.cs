@@ -265,7 +265,7 @@ namespace Wox.Plugin.Program.Programs
             return path;
         }
 
-            private static IEnumerable<ProgramPathElement> ProgramPaths(string directory, int? searchDepthLimitOptional, SearchOption searchOption, HashSet<string> suffixesToLower, bool shouldShowDirAsEntry, string overrideName, string extraDesc, bool isDirSelf)
+            private static IEnumerable<ProgramPathElement> ProgramPaths(string directory, int? searchDepthLimitOptional, SearchOption searchOption, HashSet<string> suffixesToLower, bool shouldShowDirAsEntry, string overrideName, string extraDesc, bool isDirSelf, bool isShowRelPathAsName)
         {
             if (!Directory.Exists(directory))
             {
@@ -332,7 +332,7 @@ namespace Wox.Plugin.Program.Programs
             }
 
             return paths.AsParallel().Select(p => 
-                new ProgramPathElement(p, relPath1(directory, p), overrideName, extraDesc)
+                new ProgramPathElement(p, isShowRelPathAsName ? relPath1(directory, p) : null, overrideName, extraDesc)
             );
         }
 
@@ -385,7 +385,7 @@ namespace Wox.Plugin.Program.Programs
                                    {
                                        currSourceSuffixesLowerSet = suffixesLowerSet;
                                    }
-                                   return ProgramPaths(s.Location, s.SearchDepthLimitOptional, s.SearchOption, currSourceSuffixesLowerSet, s.ShouldShowDirAsEntry, s.OverrideName, s.ExtraDesc, s.IsDirSelf);
+                                   return ProgramPaths(s.Location, s.SearchDepthLimitOptional, s.SearchOption, currSourceSuffixesLowerSet, s.ShouldShowDirAsEntry, s.OverrideName, s.ExtraDesc, s.IsDirSelf, s.IsShowRelPathAsName);
                                });
             var programs = paths.AsParallel().Select(Win32Program);
             return programs;
@@ -399,8 +399,8 @@ namespace Wox.Plugin.Program.Programs
             var directory2 = Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms);
             directory2 = Directory.GetParent(directory2).FullName;
             var suffixesLowerSet = new HashSet<string>(suffixes.Select(s => s.ToLower()));
-            var paths1 = ProgramPaths(directory1, null, SearchOption.AllDirectories, suffixesLowerSet, true, null, null, false);
-            var paths2 = ProgramPaths(directory2, null, SearchOption.AllDirectories, suffixesLowerSet, true, null, null, false);
+            var paths1 = ProgramPaths(directory1, null, SearchOption.AllDirectories, suffixesLowerSet, true, null, null, false, false);
+            var paths2 = ProgramPaths(directory2, null, SearchOption.AllDirectories, suffixesLowerSet, true, null, null, false, false);
             var paths = paths1.Concat(paths2);
 
             var programs = paths.AsParallel().Select(Win32Program);

@@ -14,6 +14,7 @@ namespace Wox.Plugin.Program
         public string ExtraDesc { get; set; }
         public List<string> ExtraExtensionList { get; set; }
         public bool IsDirSelf { get; set; } = false;
+        public bool IsShowRelPathAsName { get; set; } = false;
 
         public int? SearchDepthLimitOptional { get; set; }
 
@@ -66,6 +67,10 @@ namespace Wox.Plugin.Program
                 {
                     result = result + "::dirSelf";
                 }
+                if (IsShowRelPathAsName)
+                {
+                    result = result + "::showRelPathAsName";
+                }
                 return result;
             }
         }
@@ -80,6 +85,7 @@ namespace Wox.Plugin.Program
             t.ExtraDesc = ExtraDesc;
             t.ExtraExtensionList = ExtraExtensionList == null ? null : new List<string>(ExtraExtensionList);
             t.IsDirSelf = IsDirSelf;
+            t.IsShowRelPathAsName = IsShowRelPathAsName;
         }
 
         public bool ValueEquals(ProgramSource other)
@@ -92,6 +98,7 @@ namespace Wox.Plugin.Program
                     (ExtraExtensionList != null && other.ExtraExtensionList != null &&
                      ExtraExtensionList.SequenceEqual(other.ExtraExtensionList))) &&
                    IsDirSelf == other.IsDirSelf &&
+                   IsShowRelPathAsName == other.IsShowRelPathAsName &&
                    SearchDepthLimitOptional == other.SearchDepthLimitOptional &&
                    SearchOption == other.SearchOption &&
                    ShouldShowDirAsEntry == other.ShouldShowDirAsEntry;
@@ -109,6 +116,7 @@ namespace Wox.Plugin.Program
                     h = h * 31 + (obj.OverrideName?.GetHashCode() ?? 0);
                     h = h * 31 + (obj.ExtraDesc?.GetHashCode() ?? 0);
                     h = h * 31 + (obj.IsDirSelf ? 1 : 0);
+                    h = h * 31 + (obj.IsShowRelPathAsName ? 1 : 0);
                     h = h * 31 + (obj.SearchDepthLimitOptional ?? 0);
                     h = h * 31 + obj.SearchOption.GetHashCode();
                     h = h * 31 + (obj.ShouldShowDirAsEntry ? 1 : 0);

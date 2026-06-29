@@ -26,6 +26,7 @@
 - ::name= overrides name
 - ::desc= adds description
 - ::dirSelf lists dir itself as a single element
+- ::showRelPathAsName lists relative path as item name
 - ::extraExts=ext1,ext2,ext3 adds extra extension in curr dir
 </system:String>
     <system:String x:Key="wox_plugin_program_browse">Browse</system:String>

@@ -108,6 +108,9 @@ namespace Wox.Plugin.Program
                             } else if (paramKey == "dirSelf")
                             {
                                 result.IsDirSelf = true;
+                            } else if (paramKey == "showRelPathAsName")
+                            {
+                                result.IsShowRelPathAsName = true;
                             }
                         }
                     }
