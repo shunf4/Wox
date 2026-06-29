@@ -29,6 +29,7 @@
         </StackPanel>
         <Label Grid.Row ="1" HorizontalAlignment="Center" Content="{DynamicResource wox_plugin_program_sources}"/>
         <ListView x:Name="programSourceView" Grid.Row="2" AllowDrop="True" SelectionMode="Extended" GridViewColumnHeader.Click="GridViewColumnHeaderClickedHandler"
+            PreviewMouseLeftButtonDown="ProgramSourceView_PreviewMouseLeftButtonDown"
             PreviewMouseRightButtonUp="ProgramSourceView_PreviewMouseRightButtonUp"
             DragEnter="programSourceView_DragEnter"
             Drop="programSourceView_Drop" >

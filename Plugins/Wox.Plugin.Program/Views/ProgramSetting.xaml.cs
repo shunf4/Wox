@@ -8,6 +8,7 @@ using System.Windows.Input;
 using Wox.Plugin.Program.Programs;
 using System.ComponentModel;
 using System.Windows.Data;
+using System.Windows.Media;
 
 namespace Wox.Plugin.Program.Views
 {
@@ -167,6 +168,19 @@ namespace Wox.Plugin.Program.Views
                 _settings.ProgramSources.RemoveAll(s => selectedItems.Contains(s));
                 programSourceView.SelectedItems.Clear();
                 ReIndexing();
+            }
+        }
+
+        private void ProgramSourceView_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var item = VisualTreeHelper.HitTest(programSourceView, e.GetPosition(programSourceView))?.VisualHit;
+            while (item != null && !(item is ListViewItem))
+                item = VisualTreeHelper.GetParent(item);
+
+            if (item is ListViewItem lvi && lvi.IsSelected)
+            {
+                lvi.IsSelected = false;
+                e.Handled = true;
             }
         }
 
