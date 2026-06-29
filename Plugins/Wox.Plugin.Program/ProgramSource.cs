@@ -82,43 +82,46 @@ namespace Wox.Plugin.Program
             t.IsDirSelf = IsDirSelf;
         }
 
-        public override bool Equals(object obj)
+        public bool ValueEquals(ProgramSource other)
         {
-            return obj is ProgramSource source &&
-                   Location == source.Location &&
-                   OverrideName == source.OverrideName &&
-                   ExtraDesc == source.ExtraDesc &&
-                   (ExtraExtensionList == source.ExtraExtensionList ||
-                    (ExtraExtensionList != null && source.ExtraExtensionList != null &&
-                     ExtraExtensionList.SequenceEqual(source.ExtraExtensionList))) &&
-                   IsDirSelf == source.IsDirSelf &&
-                   SearchDepthLimitOptional == source.SearchDepthLimitOptional &&
-                   SearchOption == source.SearchOption &&
-                   ShouldShowDirAsEntry == source.ShouldShowDirAsEntry;
+            return other != null &&
+                   Location == other.Location &&
+                   OverrideName == other.OverrideName &&
+                   ExtraDesc == other.ExtraDesc &&
+                   (ExtraExtensionList == other.ExtraExtensionList ||
+                    (ExtraExtensionList != null && other.ExtraExtensionList != null &&
+                     ExtraExtensionList.SequenceEqual(other.ExtraExtensionList))) &&
+                   IsDirSelf == other.IsDirSelf &&
+                   SearchDepthLimitOptional == other.SearchDepthLimitOptional &&
+                   SearchOption == other.SearchOption &&
+                   ShouldShowDirAsEntry == other.ShouldShowDirAsEntry;
         }
 
-        public override int GetHashCode()
+        private sealed class ValueEqualityComparer : IEqualityComparer<ProgramSource>
         {
-            int hashCode = 1761937746;
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Location);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(OverrideName);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(ExtraDesc);
-            if (ExtraExtensionList != null)
+            public bool Equals(ProgramSource x, ProgramSource y) => x == y || (x != null && x.ValueEquals(y));
+            public int GetHashCode(ProgramSource obj)
             {
-                foreach (var ext in ExtraExtensionList)
+                unchecked
                 {
-                    hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(ext);
+                    int h = 17;
+                    h = h * 31 + (obj.Location?.GetHashCode() ?? 0);
+                    h = h * 31 + (obj.OverrideName?.GetHashCode() ?? 0);
+                    h = h * 31 + (obj.ExtraDesc?.GetHashCode() ?? 0);
+                    h = h * 31 + (obj.IsDirSelf ? 1 : 0);
+                    h = h * 31 + (obj.SearchDepthLimitOptional ?? 0);
+                    h = h * 31 + obj.SearchOption.GetHashCode();
+                    h = h * 31 + (obj.ShouldShowDirAsEntry ? 1 : 0);
+                    if (obj.ExtraExtensionList != null)
+                    {
+                        foreach (var ext in obj.ExtraExtensionList)
+                            h = h * 31 + (ext?.GetHashCode() ?? 0);
+                    }
+                    return h;
                 }
             }
-            else
-            {
-                hashCode = hashCode * -1521134295 + 0;
-            }
-            hashCode = hashCode * -1521134295 + IsDirSelf.GetHashCode();
-            hashCode = hashCode * -1521134295 + SearchDepthLimitOptional.GetHashCode();
-            hashCode = hashCode * -1521134295 + SearchOption.GetHashCode();
-            hashCode = hashCode * -1521134295 + ShouldShowDirAsEntry.GetHashCode();
-            return hashCode;
         }
+
+        public static IEqualityComparer<ProgramSource> ByValueComparer { get; } = new ValueEqualityComparer();
     }
 }
