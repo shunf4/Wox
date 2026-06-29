@@ -146,7 +146,14 @@ namespace Wox.Plugin.Program.Programs
 
                 if (ppe.ExtraDesc != null)
                 {
-                    name += " - " + ppe.ExtraDesc;
+                    if (name == null || name.Length == 0)
+                    {
+                        name = ppe.ExtraDesc;
+                    }
+                    else
+                    {
+                        name += " - " + ppe.ExtraDesc;
+                    }
                 }
 
                 var p = new Win32
