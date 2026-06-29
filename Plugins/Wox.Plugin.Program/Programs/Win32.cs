@@ -135,6 +135,17 @@ namespace Wox.Plugin.Program.Programs
                 {
                     name = ppe.OverrideName;
                 }
+                else if (ppe.RelativePathOpt != null)
+                {
+                    if (ppe.RelativePathOpt.ToLower().EndsWith(".lnk"))
+                    {
+                        name = ppe.RelativePathOpt.Substring(0, ppe.RelativePathOpt.Length - 4);
+                    }
+                    else
+                    {
+                        name = ppe.RelativePathOpt;
+                    }
+                }
                 else if (path.ToLower().EndsWith(".lnk"))
                 {
                     name = Path.GetFileNameWithoutExtension(path);
@@ -228,15 +239,30 @@ namespace Wox.Plugin.Program.Programs
         private class ProgramPathElement
         {
             public string Path { get; set; }
+            public string RelativePathOpt { get; set; }
             public string OverrideName { get; set; }
             public string ExtraDesc { get; set; }
 
-            public ProgramPathElement(string path, string overrideName, string extraDesc)
+            public ProgramPathElement(string path, string relativePathOpt, string overrideName, string extraDesc)
             {
                 Path = path;
+                RelativePathOpt = relativePathOpt;
                 OverrideName = overrideName;
                 ExtraDesc = extraDesc;
             }
+        }
+
+        private static string relPath1(string directory, string path)
+        {
+            if (path.StartsWith(directory))
+            {
+                path = path.Substring(directory.Length);
+            }
+            if (path.StartsWith("/") || path.StartsWith("\\"))
+            {
+                path = path.Substring(1);
+            }
+            return path;
         }
 
             private static IEnumerable<ProgramPathElement> ProgramPaths(string directory, int? searchDepthLimitOptional, SearchOption searchOption, HashSet<string> suffixesToLower, bool shouldShowDirAsEntry, string overrideName, string extraDesc, bool isDirSelf)
@@ -246,7 +272,7 @@ namespace Wox.Plugin.Program.Programs
                 if (File.Exists(directory))
                 {
                     // is a file
-                    return new ProgramPathElement[] { new ProgramPathElement(directory, overrideName, extraDesc) };
+                    return new ProgramPathElement[] { new ProgramPathElement(directory, null, overrideName, extraDesc) };
                 }
                 else
                 {
@@ -255,7 +281,7 @@ namespace Wox.Plugin.Program.Programs
             }
             if (isDirSelf)
             {
-                return new ProgramPathElement[] { new ProgramPathElement(directory, overrideName, extraDesc) };
+                return new ProgramPathElement[] { new ProgramPathElement(directory, null, overrideName, extraDesc) };
             }
             
             var paths = new List<string>();
@@ -305,7 +331,9 @@ namespace Wox.Plugin.Program.Programs
                 Logger.WoxError($"Directory not found {directory}");
             }
 
-            return paths.AsParallel().Select(p => new ProgramPathElement(p, overrideName, extraDesc));
+            return paths.AsParallel().Select(p => 
+                new ProgramPathElement(p, relPath1(directory, p), overrideName, extraDesc)
+            );
         }
 
         private static string Extension(string path)
@@ -449,7 +477,7 @@ namespace Wox.Plugin.Program.Programs
             if (!File.Exists(path))
                 return new Win32();
 
-            var entry = Win32Program(new ProgramPathElement(path, null, null));
+            var entry = Win32Program(new ProgramPathElement(path, null, null, null));
             entry.ExecutableName = Path.GetFileName(path);
 
             return entry;
