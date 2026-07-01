@@ -262,6 +262,7 @@ namespace Wox.Plugin.Program.Programs
             {
                 path = path.Substring(1);
             }
+            path = Path.GetFileName(directory) + "\\" + path;
             return path;
         }
 
